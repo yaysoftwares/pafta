@@ -56,6 +56,22 @@
         <button id="btnUploadCustomFrame" style="width: 100%;">Upload PNG/SVG (Empty Device Frame)</button>
         <div id="customFramesList" class="list" style="margin-top: 6px; max-height: 120px;"></div>
       </div>
+
+      <div class="section">
+        <div class="section-title">Templates</div>
+        <div class="row">
+          <select id="selectTemplateCategory">
+            <option value="all">All categories</option>
+          </select>
+        </div>
+        <div id="templatesGrid" class="templates-grid"></div>
+        <div class="hint" style="margin-top: 6px;">Pick a design, then click a phone slot to load your screenshot.</div>
+        <input type="file" id="inputTemplateImage" accept="image/*" class="hidden">
+        <div id="slotBanner" class="slot-banner" style="display:none;">
+          <span class="template-cat">Slots</span>
+          <span id="slotBannerText" style="flex:1;font-size:11px;color:var(--text-light);"></span>
+        </div>
+      </div>
     </aside>
 
     <main class="center-panel">
@@ -314,6 +330,8 @@
   <script src="vendor/fabric.min.js"></script>
   <script src="vendor/jszip.min.js"></script>
   <script src="vendor/FileSaver.min.js"></script>
+  <script type="module" src="js/templates.js"></script>
+  <script type="module" src="js/tplapply.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

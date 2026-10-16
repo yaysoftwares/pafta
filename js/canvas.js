@@ -382,4 +382,11 @@ export class CanvasManager {
       });
     });
   }
+
+  /** Fabric text objects on the canvas (textbox / i-text). */
+  getTextObjects() {
+    return this.canvas.getObjects().filter(
+      (o) => o.type === 'i-text' || o.type === 'textbox'
+    );
+  }
 }

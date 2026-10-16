@@ -1,8 +1,9 @@
 import { APPSTORE_PRESETS, GOOGLEPLAY_PRESETS, APP_VERSION, FONT_FAMILIES } from './constants.js';
 import { buildFilename, sanitizeFilename, getTimestamp, generateId } from './utils.js';
+import { TEMPLATE_CATEGORIES, getTemplatesByCategory, getTemplate } from './templates.js';
 
 export class UI {
-  constructor(store, canvasManager, frameManager, textManager, translateManager, exporter, projectManager, importer, rulerManager, history) {
+  constructor(store, canvasManager, frameManager, textManager, translateManager, exporter, projectManager, importer, rulerManager, history, templateManager) {
     this.store = store;
     this.canvasManager = canvasManager;
     this.frameManager = frameManager;
@@ -13,6 +14,7 @@ export class UI {
     this.importer = importer;
     this.rulerManager = rulerManager || null;
     this.history = history || null;
+    this.templateManager = templateManager || null;
     this.pendingTranslations = null;
     this.ratioLocked = true;
 
@@ -22,6 +24,8 @@ export class UI {
     this.renderFrames();
     this.renderPresets();
     this.renderCustomFrames();
+    this.renderTemplates();
+    this.bindTemplateEvents();
     this.renderLanguages();
     this.renderGlossary();
     this.renderLayers();
@@ -56,6 +60,8 @@ export class UI {
     this.inputCustomFrame = document.getElementById('inputCustomFrame');
     this.btnUploadCustomFrame = document.getElementById('btnUploadCustomFrame');
     this.customFramesList = document.getElementById('customFramesList');
+    this.selectTemplateCategory = document.getElementById('selectTemplateCategory');
+    this.templatesGrid = document.getElementById('templatesGrid');
     this.btnZoomIn = document.getElementById('btnZoomIn');
     this.btnZoomOut = document.getElementById('btnZoomOut');
     this.btnZoomFit = document.getElementById('btnZoomFit');
@@ -1376,5 +1382,148 @@ export class UI {
     }
     this.btnRemoveLayer.disabled = !hasObj || activeObj.dataId === 'screen';
     this.zoomLabel.textContent = Math.round(this.canvasManager.zoom * 100) + '%';
+  }
+
+  // ---------- templates ----------
+
+  bindTemplateEvents() {
+    const tm = this.templateManager;
+    if (!tm) return;
+    if (this.selectTemplateCategory) {
+      this.selectTemplateCategory.addEventListener('change', () => this.renderTemplates());
+    }
+    if (this.templatesGrid) {
+      this.templatesGrid.addEventListener('click', (e) => {
+        const card = e.target.closest('.template-card');
+        const loadBtn = e.target.closest('.slot-load-btn');
+        if (loadBtn) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.openSlotFilePicker(loadBtn.dataset.slotId);
+          return;
+        }
+        if (card) {
+          const id = card.dataset.templateId;
+          if (id) this.applyTemplate(getTemplate(id));
+        }
+      });
+    }
+    const input = document.getElementById('inputTemplateImage');
+    if (input) {
+      input.addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const slotId = input.dataset.slotId;
+        input.value = '';
+        const item = this.store.getActiveItem();
+        if (!item || !item.templateId) return;
+        try {
+          await tm.loadFileIntoSlot(item, slotId, file);
+          await tm.renderTemplate(item);
+          this.renderSlotBanner(item);
+          this.renderLayers();
+          this.persistComposition();
+        } catch (err) {
+          console.error('Template slot load failed:', err);
+        }
+      });
+    }
+  }
+
+  openSlotFilePicker(slotId) {
+    const input = document.getElementById('inputTemplateImage');
+    if (!input) return;
+    input.dataset.slotId = slotId;
+    input.value = '';
+    input.click();
+  }
+
+  renderTemplates() {
+    const tm = this.templateManager;
+    const cat = this.selectTemplateCategory ? this.selectTemplateCategory.value : 'all';
+    const list = getTemplatesByCategory(cat);
+    if (this.selectTemplateCategory && this.selectTemplateCategory.children.length <= 1) {
+      for (const c of TEMPLATE_CATEGORIES) {
+        const o = document.createElement('option');
+        o.value = c.id;
+        o.textContent = c.name;
+        this.selectTemplateCategory.appendChild(o);
+      }
+    }
+    const grid = this.templatesGrid;
+    if (!grid) return;
+    grid.innerHTML = '';
+    const activeId = this.store.getActiveItem()?.templateId;
+    for (const tpl of list) {
+      const card = document.createElement('div');
+      card.className = 'template-card' + (tpl.id === activeId ? ' active' : '');
+      card.dataset.templateId = tpl.id;
+      const bg = (tpl.bg && tpl.bg.color) || '#101014';
+      card.innerHTML =
+        '<div style="width:100%;height:150px;background:' +
+        bg + ';display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-size:26px;">' +
+        (tpl.frame === 'device' ? '📱' : '🖼️') +
+        '</div>' +
+        '<div class="template-meta">' +
+        '<div class="template-cat">' + tpl.category + '</div>' +
+        '<div class="template-name">' + tpl.name + '</div>' +
+        '<div class="template-desc">' + tpl.desc + '</div>' +
+        '</div>';
+      grid.appendChild(card);
+    }
+  }
+
+  renderSlotBanner(item) {
+    const banner = document.getElementById('slotBanner');
+    const text = document.getElementById('slotBannerText');
+    const tm = this.templateManager;
+    if (!banner || !text || !tm) return;
+    if (!item || !item.templateId) {
+      banner.style.display = 'none';
+      return;
+    }
+    const slots = tm.slotIds(item);
+    if (!slots.length) {
+      banner.style.display = 'none';
+      return;
+    }
+    const parts = slots.map((s) => {
+      const has = tm.slotHasImage(item, s);
+      return (
+        '<span style="margin-right:8px;font-size:11px;color:var(--text-light);">' +
+        s.toUpperCase() +
+        ': ' +
+        (has
+          ? '<span style="color:var(--success)">✓</span>'
+          : '<button class="slot-load-btn" data-slot-id="' +
+            s +
+            '" style="padding:2px 6px;font-size:10px;">load</button>') +
+        '</span>'
+      );
+    });
+    text.innerHTML = parts.join(' ');
+    banner.style.display = 'flex';
+  }
+
+  async applyTemplate(tpl) {
+    const tm = this.templateManager;
+    const cm = this.canvasManager;
+    const c = cm.canvas;
+    if (!tm || !tpl) return;
+    const item = await tm.createFromTemplate(tpl.id);
+    c.clear();
+    c.setWidth(tpl.width);
+    c.setHeight(tpl.height);
+    c.backgroundColor = '#1a1a1f';
+    cm.zoom = 1;
+    cm.applyZoom(1);
+    await tm.renderTemplate(item);
+    this.update();
+    this.updateStatus();
+    this.renderLayers();
+    this.renderItems();
+    this.renderSlotBanner(item);
+    this.history.init();
+    this.persistComposition();
   }
 }

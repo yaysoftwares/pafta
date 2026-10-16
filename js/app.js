@@ -8,6 +8,7 @@ import { Exporter } from './exporter.js';
 import { Importer } from './importer.js';
 import { ProjectManager } from './project.js';
 import { HistoryManager } from './history.js';
+import { TemplateManager } from './tplapply.js';
 import { UI } from './ui.js';
 
 class App {
@@ -23,6 +24,7 @@ class App {
     this.importer = new Importer(this.store);
     this.projectManager = new ProjectManager(this.store);
     this.history = new HistoryManager(this.store);
+    this.templateManager = new TemplateManager(this.store, this.canvasManager, this.textManager);
     this.store.onChange = () => this.history.schedule();
     this.ui = new UI(
       this.store,
@@ -34,7 +36,8 @@ class App {
       this.projectManager,
       this.importer,
       this.rulerManager,
-      this.history
+      this.history,
+      this.templateManager
     );
     this.history.init();
     this.history.onApply = () => this.ui.afterHistoryApply();
