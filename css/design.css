@@ -72,6 +72,20 @@
   background: rgba(59, 130, 246, 0.15);
 }
 
+/* Icon-only buttons (Layers actions, undo/redo) */
+.btn-group button:has(svg) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 6px;
+  line-height: 1;
+}
+
+.btn-group button:has(svg) svg {
+  display: block;
+  pointer-events: none;
+}
+
 .hint {
   font-size: 11px;
   color: var(--text-light);
@@ -121,6 +135,64 @@
     linear-gradient(-45deg, transparent 75%, #3a3a42 75%);
   background-size: 16px 16px;
   background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+/* ---------- rulers + guides stage ---------- */
+
+.canvas-stage {
+  --ruler-size: 22px;
+  display: grid;
+  grid-template-columns: var(--ruler-size) auto;
+  grid-template-rows: var(--ruler-size) auto;
+  margin: auto;
+  flex: 0 0 auto;
+  max-width: max-content;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.canvas-stage.no-rulers {
+  grid-template-columns: 0 auto;
+  grid-template-rows: 0 auto;
+}
+
+.canvas-stage.no-rulers .ruler-corner,
+.canvas-stage.no-rulers .ruler-h,
+.canvas-stage.no-rulers .ruler-v {
+  display: none;
+}
+
+.ruler-corner {
+  grid-area: 1 / 1;
+  background: var(--panel-light);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-light);
+  font-size: 8px;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.ruler-h {
+  grid-area: 1 / 2;
+  display: block;
+  border-bottom: 1px solid var(--border);
+}
+
+.ruler-v {
+  grid-area: 2 / 1;
+  display: block;
+  border-right: 1px solid var(--border);
+}
+
+#guideOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 5;
 }
 
 select optgroup {

@@ -1,6 +1,13 @@
 export const APP_VERSION = '1.0.0';
 export const APP_NAME = 'Screenshot Framer';
 
+// Pasteboard (the empty ring around the real canvas) + fade for objects
+// that fully leave the logical canvas bounds.
+export const PASTEBOARD_PX = 260; // logical px, added on every side
+export const OUTSIDE_DIM = 'rgba(10,10,14,0.6)'; // overlay cover over the pasteboard
+export const OUTSIDE_OPACITY = 0.65; // canvas-object fade when fully outside
+export const ARTBOARD_EDGE = 'rgba(148,163,184,0.65)'; // artboard border on the overlay
+
 export const DEVICE_FRAMES = [
   // iOS
   { id: 'iphone-16-pro-max', name: 'iPhone 16 Pro Max', category: 'ios', os: 'ios', width: 1290, height: 2796 },

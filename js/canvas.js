@@ -1,4 +1,5 @@
 import { generateId } from './utils.js';
+import { OUTSIDE_DIM, OUTSIDE_OPACITY, PASTEBOARD_PX } from './constants.js';
 
 export class CanvasManager {
   constructor(store, frameManager) {
@@ -11,6 +12,11 @@ export class CanvasManager {
     });
     this.currentItem = null;
     this.zoom = 1;
+    // Extra logical pixels on every side so content outside the real canvas
+    // stays visible (faded) instead of being clipped.
+    this.pasteboard = PASTEBOARD_PX;
+    this.outsideStyle = { color: OUTSIDE_DIM, opacity: OUTSIDE_OPACITY };
+    this.rulerInset = 0; // extra space taken by rulers when fitting
     this.loading = false;
     this.currentLang = null;
     this.onSelection = null;
@@ -36,6 +42,60 @@ export class CanvasManager {
     this.canvas.on('object:added', fire);
     this.canvas.on('object:removed', fire);
     this.canvas.on('text:changed', fire);
+    // Keep the pasteboard fade fresh while things move (visual only).
+    this.canvas.on('object:moving', () => this.refreshOutsideFade());
+    this.canvas.on('object:scaling', () => this.refreshOutsideFade());
+    this.canvas.on('object:rotating', () => this.refreshOutsideFade());
+    this.canvas.on('object:modified', () => this.refreshOutsideFade());
+  }
+
+  /** Logical canvas bounds (the real artboard, without the pasteboard ring). */
+  artboard() {
+    return {
+      left: 0,
+      top: 0,
+      width: this.canvas.getWidth(),
+      height: this.canvas.getHeight(),
+    };
+  }
+
+  isOutsideArtboard(o) {
+    if (!o) return false;
+    if (o.dataId === 'artboard-bg') return false;
+    let b;
+    try {
+      b = o.getBoundingRect(true, true);
+    } catch (e) {
+      return false;
+    }
+    const W = this.canvas.getWidth();
+    const H = this.canvas.getHeight();
+    return (b.left + b.width) <= 0 || b.left >= W || (b.top + b.height) <= 0 || b.top >= H;
+  }
+
+  /** Fade fully-outside objects so off-canvas content stays visible but dimmed. */
+  refreshOutsideFade() {
+    if (this.loading) return;
+    if (this._fadeQueued) return;
+    this._fadeQueued = true;
+    const run = () => {
+      this._fadeQueued = false;
+      if (this.loading) return;
+      let dirty = false;
+      for (const o of this.canvas.getObjects()) {
+        const outside = this.isOutsideArtboard(o);
+        const want = outside ? this.outsideStyle.opacity : 1;
+        if (o.dataOutsideFade !== outside || o.opacity !== want) {
+          o.dataOutsideFade = outside;
+          o.opacity = want;
+          o.dirty = true;
+          dirty = true;
+        }
+      }
+      if (dirty && !this.loading) this.canvas.requestRenderAll();
+    };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(run);
+    else run();
   }
 
   onSelectionChange(objects) {
@@ -209,22 +269,48 @@ export class CanvasManager {
 
   applyZoom(z) {
     this.zoom = Math.min(Math.max(z || 1, 0.05), 5);
-    this.canvas.setZoom(this.zoom);
-    const w = Math.round(this.canvas.getWidth() * this.zoom);
-    const h = Math.round(this.canvas.getHeight() * this.zoom);
     const c = this.canvas;
-    if (c.lowerCanvasEl) {
-      c.lowerCanvasEl.style.width = w + 'px';
-      c.lowerCanvasEl.style.height = h + 'px';
+    const pb = this.pasteboard || 0;
+    const zx = this.zoom;
+    // Viewport with pasteboard offset: logical (0,0) renders at (pb,pb).
+    // This keeps content outside the real canvas visible (faded) instead
+    // of being clipped at the element edge.
+    c.setViewportTransform([zx, 0, 0, zx, pb * zx, pb * zx]);
+
+    // Resize the backing store (real pixel buffer) + CSS to the on-screen size
+    // (artboard + pasteboard ring). Without this, fabric renders into the
+    // logical-size buffer and the browser stretches it via CSS, which blurs
+    // everything whenever zoom !== 1.
+    // getWidth()/getHeight() stay logical (used for export, rulers, snapping).
+    const dpr = window.devicePixelRatio || 1;
+    const dispW = Math.max(1, Math.round((c.getWidth() + pb * 2) * zx));
+    const dispH = Math.max(1, Math.round((c.getHeight() + pb * 2) * zx));
+    const bufW = Math.max(1, Math.round(dispW * dpr));
+    const bufH = Math.max(1, Math.round(dispH * dpr));
+    for (const el of [c.lowerCanvasEl, c.upperCanvasEl]) {
+      if (!el) continue;
+      el.width = bufW;
+      el.height = bufH;
+      el.style.width = dispW + 'px';
+      el.style.height = dispH + 'px';
     }
-    if (c.upperCanvasEl) {
-      c.upperCanvasEl.style.width = w + 'px';
-      c.upperCanvasEl.style.height = h + 'px';
+    // Assigning el.width resets the 2d context transform to identity, wiping
+    // the dpr scale fabric's _initRetinaScaling had installed. Re-apply it
+    // absolutely (setTransform, not scale) so on-screen rendering fills the
+    // full dpr buffer on HiDPI screens instead of shrinking to 1/dpr.
+    if (c.contextContainer && typeof c.contextContainer.setTransform === 'function') {
+      c.contextContainer.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    if (c.contextTop && typeof c.contextTop.setTransform === 'function') {
+      c.contextTop.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     if (c.wrapperEl) {
-      c.wrapperEl.style.width = w + 'px';
-      c.wrapperEl.style.height = h + 'px';
+      c.wrapperEl.style.width = dispW + 'px';
+      c.wrapperEl.style.height = dispH + 'px';
     }
+    if (typeof c.calcOffset === 'function') c.calcOffset();
+    c.requestRenderAll();
+    this.refreshOutsideFade();
     if (this.onZoom) this.onZoom(this.zoom);
   }
 
@@ -239,28 +325,51 @@ export class CanvasManager {
   zoomFit() {
     const wrap = document.querySelector('.canvas-wrapper');
     if (!wrap) return;
-    const availW = wrap.clientWidth - 40;
-    const availH = wrap.clientHeight - 40;
-    const w = this.canvas.getWidth();
-    const h = this.canvas.getHeight();
+    const pad = 40 + (this.rulerInset || 0);
+    const availW = wrap.clientWidth - pad;
+    const availH = wrap.clientHeight - pad;
+    const pb = this.pasteboard || 0;
+    const w = this.canvas.getWidth() + pb * 2;
+    const h = this.canvas.getHeight() + pb * 2;
     if (w <= 0 || h <= 0 || availW <= 0 || availH <= 0) return;
     this.applyZoom(Math.min(availW / w, availH / h, 1));
   }
 
   toDataURL(format = 'png') {
-    const vt = this.canvas.viewportTransform;
-    this.canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+    // Export the artboard (logical W×H) 1:1.
+    //
+    // Why the viewport swap: our on-screen viewport is [z,0,0,z,pb*z,pb*z]
+    // (zoom + pasteboard offset). fabric's toCanvasElement() derives its
+    // export viewport from the CURRENT viewportTransform, so exporting
+    // directly would bake zoom/pasteboard into the PNG (wrong size/shift).
+    // Resetting to identity + cropping W×H gives an exact 1:1 artboard PNG.
+    //
+    // Why renderOnAddRemove=false + cancelRequestedRender: setViewportTransform()
+    // schedules an on-screen repaint via requestRenderAll(). Suppressing it
+    // during the synchronous swap/restore means the visible canvas never
+    // repaints mid-export — no flicker/shift on screen. Repaint afterwards so
+    // the screen never stays stale (e.g. after cancelling a pending frame).
+    const c = this.canvas;
+    const prev = c.viewportTransform.slice();
+    const was = c.renderOnAddRemove;
+    c.renderOnAddRemove = false;
+    if (typeof c.cancelRequestedRender === 'function') c.cancelRequestedRender();
+    c.setViewportTransform([1, 0, 0, 1, 0, 0]);
     let url;
     try {
-      url = this.canvas.toDataURL({
+      url = c.toDataURL({
         format,
         multiplier: 1,
         enableRetinaScaling: false,
-        width: this.canvas.getWidth(),
-        height: this.canvas.getHeight(),
+        left: 0,
+        top: 0,
+        width: c.getWidth(),
+        height: c.getHeight(),
       });
     } finally {
-      this.canvas.setViewportTransform(vt);
+      c.renderOnAddRemove = was;
+      c.setViewportTransform(prev);
+      c.requestRenderAll();
     }
     return url;
   }

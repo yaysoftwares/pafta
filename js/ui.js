@@ -2,7 +2,7 @@ import { APPSTORE_PRESETS, GOOGLEPLAY_PRESETS, APP_VERSION, FONT_FAMILIES } from
 import { buildFilename, sanitizeFilename, getTimestamp, generateId } from './utils.js';
 
 export class UI {
-  constructor(store, canvasManager, frameManager, textManager, translateManager, exporter, projectManager, importer) {
+  constructor(store, canvasManager, frameManager, textManager, translateManager, exporter, projectManager, importer, rulerManager, history) {
     this.store = store;
     this.canvasManager = canvasManager;
     this.frameManager = frameManager;
@@ -11,6 +11,8 @@ export class UI {
     this.exporter = exporter;
     this.projectManager = projectManager;
     this.importer = importer;
+    this.rulerManager = rulerManager || null;
+    this.history = history || null;
     this.pendingTranslations = null;
     this.ratioLocked = true;
 
@@ -111,6 +113,11 @@ export class UI {
     this.btnAlignH = document.getElementById('btnAlignH');
     this.btnAlignV = document.getElementById('btnAlignV');
     this.btnDownloadPng = document.getElementById('btnDownloadPng');
+    this.btnUndo = document.getElementById('btnUndo');
+    this.btnRedo = document.getElementById('btnRedo');
+    this.btnToggleRulers = document.getElementById('btnToggleRulers');
+    this.btnToggleGuides = document.getElementById('btnToggleGuides');
+    this.btnToggleSnap = document.getElementById('btnToggleSnap');
     this.modalTranslate = document.getElementById('modalTranslate');
     this.btnCloseTranslate = document.getElementById('btnCloseTranslate');
     this.btnCancelTranslate = document.getElementById('btnCancelTranslate');
@@ -237,6 +244,21 @@ export class UI {
     this.btnZoomOut.addEventListener('click', () => cm.zoomOut());
     this.btnZoomFit.addEventListener('click', () => cm.zoomFit());
 
+    // Ctrl+wheel over the canvas zooms the canvas (never the browser page).
+    const stage = document.getElementById('canvasStage') || this.canvasContainer;
+    if (stage) {
+      stage.addEventListener('wheel', (e) => {
+        if (!e.ctrlKey && !e.metaKey) return; // plain wheel = normal scroll
+        e.preventDefault(); // block browser page zoom
+        const dir = e.deltaY < 0 ? 1 : -1;
+        cm.applyZoom(cm.zoom * (dir > 0 ? 1.1 : 1 / 1.1));
+      }, { passive: false });
+    }
+    // Also block browser zoom anywhere else in the app so the page never zooms.
+    window.addEventListener('wheel', (e) => {
+      if (e.ctrlKey || e.metaKey) e.preventDefault();
+    }, { passive: false });
+
     // Layers
     this.btnAddText.addEventListener('click', () => this.addTextLayer());
     this.btnRemoveLayer.addEventListener('click', () => {
@@ -319,6 +341,29 @@ export class UI {
     // Download current canvas
     this.btnDownloadPng.addEventListener('click', () => this.downloadCurrentPng());
 
+    // Undo / Redo buttons
+    if (this.btnUndo) this.btnUndo.addEventListener('click', () => this.undo());
+    if (this.btnRedo) this.btnRedo.addEventListener('click', () => this.redo());
+
+    // Rulers / guides / snap toggles (reflect persisted prefs on boot)
+    this.syncToggleButtons();
+    if (this.btnToggleRulers) this.btnToggleRulers.addEventListener('click', () => {
+      if (!this.rulerManager) return;
+      this.rulerManager.setRulersEnabled(!this.rulerManager.enabled);
+      this.syncToggleButtons();
+      this.canvasManager.zoomFit();
+    });
+    if (this.btnToggleGuides) this.btnToggleGuides.addEventListener('click', () => {
+      if (!this.rulerManager) return;
+      this.rulerManager.setGuidesEnabled(!this.rulerManager.guidesEnabled);
+      this.syncToggleButtons();
+    });
+    if (this.btnToggleSnap) this.btnToggleSnap.addEventListener('click', () => {
+      if (!this.rulerManager) return;
+      this.rulerManager.setSnapEnabled(!this.rulerManager.snapEnabled);
+      this.syncToggleButtons();
+    });
+
     // Presets
     this.selectStore.addEventListener('change', () => this.renderPresets());
     this.btnApplyPreset.addEventListener('click', () => {
@@ -380,6 +425,7 @@ export class UI {
     cm.onZoom = (z) => {
       this.zoomLabel.textContent = Math.round(z * 100) + '%';
       this.syncCanvasSizeUI();
+      if (this.rulerManager) this.rulerManager.sync();
     };
 
     // Re-render text once locally bundled webfonts are ready
@@ -396,6 +442,77 @@ export class UI {
     // Network status
     window.addEventListener('online', () => this.updateStatus());
     window.addEventListener('offline', () => this.updateStatus());
+
+    // Keep rulers aligned when the window/panels resize (never change the
+    // user's zoom here — only re-sync the ruler/overlay sizes).
+    const resyncRulers = () => {
+      if (this.rulerManager) this.rulerManager.sync();
+    };
+    if (typeof ResizeObserver !== 'undefined') {
+      const wrap = document.querySelector('.canvas-wrapper');
+      if (wrap) {
+        let resizeTimer = null;
+        new ResizeObserver(() => {
+          clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(resyncRulers, 120);
+        }).observe(wrap);
+      }
+    } else {
+      window.addEventListener('resize', resyncRulers);
+    }
+
+    // Undo / Redo (Ctrl+Z, Ctrl+Shift+Z / Ctrl+Y) — never hijack typing.
+    window.addEventListener('keydown', (e) => {
+      const mod = e.ctrlKey || e.metaKey;
+      if (!mod || !this.history) return;
+      const t = e.target;
+      const tag = (t && t.tagName ? t.tagName.toLowerCase() : '');
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || (t && t.isContentEditable)) return;
+      // Don't hijack text editing inside the canvas (fabric IText).
+      try {
+        const active = this.canvasManager && this.canvasManager.canvas
+          ? this.canvasManager.canvas.getActiveObject() : null;
+        if (active && (active.type === 'i-text' || active.isEditing)) return;
+      } catch (err) { /* ignore */ }
+      const key = (e.key || '').toLowerCase();
+      if (key === 'z' && !e.shiftKey) {
+        e.preventDefault();
+        this.undo();
+      } else if ((key === 'z' && e.shiftKey) || key === 'y') {
+        e.preventDefault();
+        this.redo();
+      }
+    });
+  }
+
+  // ---------- undo / redo ----------
+
+  undo() {
+    if (!this.history) return;
+    if (this.history.undo()) this.flash('Undo');
+  }
+
+  redo() {
+    if (!this.history) return;
+    if (this.history.redo()) this.flash('Redo');
+  }
+
+  /** Re-render UI + canvas after a history snapshot has been applied. */
+  async afterHistoryApply() {
+    const cm = this.canvasManager;
+    cm.currentLang = null;
+    const active = this.store.getActiveItem();
+    await cm.setCurrentItem(active);
+    this.update();
+    this.updateStatus();
+  }
+
+  /** Reflect ruler/guide/snap state on the toolbar toggle buttons. */
+  syncToggleButtons() {
+    const rm = this.rulerManager;
+    if (this.btnToggleRulers) this.btnToggleRulers.classList.toggle('active', !!(rm && rm.enabled));
+    if (this.btnToggleGuides) this.btnToggleGuides.classList.toggle('active', !!(rm && rm.guidesEnabled));
+    if (this.btnToggleSnap) this.btnToggleSnap.classList.toggle('active', !!(rm && rm.snapEnabled));
   }
 
   // ---------- helpers ----------
@@ -846,19 +963,27 @@ export class UI {
   }
 
   centerSelection(axis) {
-    const obj = this.canvasManager.canvas.getActiveObject();
+    const canvas = this.canvasManager.canvas;
+    let obj = canvas.getActiveObject();
+    // If nothing is selected but there's a screenshot on the canvas, target it.
+    if (!obj) obj = this.canvasManager.findScreen();
     if (!obj) return;
-    const c = this.canvasManager.canvas;
+    const W = canvas.getWidth();
+    const H = canvas.getHeight();
     const b = obj.getBoundingRect(true, true);
     if (axis === 'h') {
-      obj.set('left', obj.left + ((c.getWidth() - b.width) / 2 - b.left));
+      // Center the object's bounding box horizontally on the canvas.
+      obj.set('left', obj.left + (W / 2 - (b.left + b.width / 2)));
     } else {
-      obj.set('top', obj.top + ((c.getHeight() - b.height) / 2 - b.top));
+      // Center the object's bounding box vertically on the canvas.
+      obj.set('top', obj.top + (H / 2 - (b.top + b.height / 2)));
     }
     obj.setCoords();
-    c.requestRenderAll();
+    canvas.requestRenderAll();
     this.persistComposition();
     this.syncSelectionUI();
+    // Visually confirm the center line on the ruler/canvas overlay.
+    if (this.rulerManager) this.rulerManager.highlightCenter(axis);
   }
 
   // ---------- fonts ----------

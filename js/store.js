@@ -24,6 +24,7 @@ export class Store {
       translateMap: [],
     };
     this.customFrames = [];
+    this.onChange = null; // optional hook, e.g. history manager
   }
 
   loadFromSession() {
@@ -52,6 +53,7 @@ export class Store {
     } catch (e) {
       console.warn('Failed to save session:', e);
     }
+    if (typeof this.onChange === 'function') this.onChange();
   }
 
   updateProject(updates) {
