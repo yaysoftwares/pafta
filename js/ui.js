@@ -69,6 +69,8 @@ export class UI {
     this.activeItemName = document.getElementById('activeItemName');
     this.layersList = document.getElementById('layersList');
     this.btnAddText = document.getElementById('btnAddText');
+    this.btnAddShapeCircle = document.getElementById('btnAddShapeCircle');
+    this.btnAddShapeRect = document.getElementById('btnAddShapeRect');
     this.btnRemoveLayer = document.getElementById('btnRemoveLayer');
     this.btnLayerUp = document.getElementById('btnLayerUp');
     this.btnLayerDown = document.getElementById('btnLayerDown');
@@ -266,7 +268,16 @@ export class UI {
     }, { passive: false });
 
     // Layers
-    this.btnAddText.addEventListener('click', () => this.addTextLayer());
+    this.btnAddText.addEventListener('click', () => {
+      const active = this.canvasManager.canvas.getActiveObject();
+      if (active && (active.dataId === 'shape-circle' || active.dataId === 'shape-rect' || active.dataId === 'shape-group')) {
+        this.addTextToShape();
+      } else {
+        this.addTextLayer();
+      }
+    });
+    if (this.btnAddShapeCircle) this.btnAddShapeCircle.addEventListener('click', () => this.addShape('circle'));
+    if (this.btnAddShapeRect) this.btnAddShapeRect.addEventListener('click', () => this.addShape('rect'));
     this.btnRemoveLayer.addEventListener('click', () => {
       const obj = cm.canvas.getActiveObject();
       if (!obj || obj.dataId === 'screen') return;
@@ -1572,5 +1583,53 @@ export class UI {
     this.renderSlotBanner(item);
     this.history.init();
     this.persistComposition();
+  }
+
+  addShape(kind) {
+    const cm = this.canvasManager;
+    const obj = cm.addShape(kind);
+    this.persistComposition();
+    this.syncSelectionUI();
+    this.renderLayers();
+    this.flash(`Added ${kind}`);
+  }
+
+  addTextToShape() {
+    const cm = this.canvasManager;
+    const c = cm.canvas;
+    const active = c.getActiveObject();
+    if (!active) return;
+    if (active.dataId === 'shape-group') return;
+    const isShape = active.dataId === 'shape-circle' || active.dataId === 'shape-rect';
+    if (!isShape) return;
+    const b = active.getBoundingRect(true, true);
+    const text = new fabric.IText('Label', {
+      fontSize: Math.max(18, b.width / 5),
+      fill: '#ffffff',
+      selectable: false,
+      evented: false,
+      hasControls: false,
+      hasBorders: false,
+      dataId: 'shape-label',
+    });
+    active.set({ left: 0, top: 0 });
+    active.setCoords();
+    const group = new fabric.Group([active, text], {
+      left: b.left + b.width / 2,
+      top: b.top + b.height / 2,
+      selectable: true,
+      evented: true,
+      hasControls: true,
+      hasBorders: true,
+      dataId: 'shape-group',
+    });
+    c.remove(active);
+    c.add(group);
+    c.setActiveObject(group);
+    c.requestRenderAll();
+    this.persistComposition();
+    this.syncSelectionUI();
+    this.renderLayers();
+    this.flash('Text added to shape');
   }
 }

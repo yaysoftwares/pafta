@@ -73,7 +73,16 @@ export class CanvasManager {
     return (b.left + b.width) <= 0 || b.left >= W || (b.top + b.height) <= 0 || b.top >= H;
   }
 
-  /** Fade fully-outside objects so off-canvas content stays visible but dimmed. */
+  intersectionArea(b, W, H) {
+    const x0 = Math.max(0, b.left);
+    const y0 = Math.max(0, b.top);
+    const x1 = Math.min(W, b.left + b.width);
+    const y1 = Math.min(H, b.top + b.height);
+    if (x1 <= x0 || y1 <= y0) return 0;
+    return (x1 - x0) * (y1 - y0);
+  }
+
+  /** Fade objects that cross the canvas edge so off-canvas parts stay visible but dimmed. */
   refreshOutsideFade() {
     if (this.loading) return;
     if (this._fadeQueued) return;
@@ -83,10 +92,21 @@ export class CanvasManager {
       if (this.loading) return;
       let dirty = false;
       for (const o of this.canvas.getObjects()) {
-        const outside = this.isOutsideArtboard(o);
-        const want = outside ? this.outsideStyle.opacity : 1;
-        if (o.dataOutsideFade !== outside || o.opacity !== want) {
-          o.dataOutsideFade = outside;
+        if (o.dataId === 'artboard-bg') continue;
+        let b;
+        try {
+          b = o.getBoundingRect(true, true);
+        } catch (e) {
+          continue;
+        }
+        const W = this.canvas.getWidth();
+        const H = this.canvas.getHeight();
+        const total = b.width * b.height;
+        const inter = this.intersectionArea(b, W, H);
+        const ratio = total > 0 ? inter / total : 0;
+        const want = ratio >= 1 ? 1 : 1 - (1 - this.outsideStyle.opacity) * (1 - ratio);
+        if (o.dataOutsideFade !== ratio || Math.abs(o.opacity - want) > 0.001) {
+          o.dataOutsideFade = ratio;
           o.opacity = want;
           o.dirty = true;
           dirty = true;
@@ -381,6 +401,55 @@ export class CanvasManager {
         else resolve(img);
       });
     });
+  }
+
+  /** Add a shape object at canvas center (circle or rect). */
+  addShape(kind = 'circle') {
+    const c = this.canvas;
+    const W = c.getWidth();
+    const H = c.getHeight();
+    const size = Math.min(W, H) * 0.25;
+    const color = '#3b82f6';
+    let obj;
+    if (kind === 'circle') {
+      obj = new fabric.Circle({
+        left: W / 2,
+        top: H / 2,
+        radius: size / 2,
+        fill: color,
+        opacity: 0.92,
+        selectable: true,
+        evented: true,
+        hasControls: true,
+        hasBorders: true,
+        cornerStyle: 'circle',
+        transparentCorners: false,
+        dataId: 'shape-circle',
+      });
+    } else {
+      obj = new fabric.Rect({
+        left: W / 2 - size / 2,
+        top: H / 2 - size / 2,
+        width: size,
+        height: size,
+        rx: Math.max(8, size * 0.08),
+        ry: Math.max(8, size * 0.08),
+        fill: color,
+        opacity: 0.92,
+        selectable: true,
+        evented: true,
+        hasControls: true,
+        hasBorders: true,
+        cornerStyle: 'circle',
+        transparentCorners: false,
+        dataId: 'shape-rect',
+      });
+    }
+    c.add(obj);
+    c.setActiveObject(obj);
+    c.requestRenderAll();
+    this.refreshOutsideFade();
+    return obj;
   }
 
   /** Fabric text objects on the canvas (textbox / i-text). */
