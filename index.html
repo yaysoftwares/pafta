@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <title>Screenshot Framer</title>
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/fonts.css">
+  <link rel="stylesheet" href="css/design.css">
+</head>
+<body>
+  <div class="app-container">
+    <header class="topbar">
+      <button id="btnNew">New Project</button>
+      <input type="file" id="inputOpenZip" accept=".zip" class="hidden">
+      <button id="btnOpenZip">Open ZIP</button>
+      <button id="btnExportZip">Export ZIP</button>
+      <button id="btnExportAll">Export All (PNG)</button>
+      <button id="btnExportSelected" disabled>Export Selected</button>
+      <button id="btnDownloadPng" disabled>Download PNG</button>
+      <div style="margin-left: auto; display: flex; gap: 6px; align-items: center;">
+        <input type="text" id="inputAppName" placeholder="App Name" style="width: 120px;">
+        <input type="text" id="inputProjectName" placeholder="Project Name" style="width: 120px;">
+      </div>
+    </header>
+
+    <aside class="left-panel">
+      <div class="section">
+        <div class="section-title">Add Screenshots</div>
+        <input type="file" id="inputImages" accept="image/*" multiple class="hidden">
+        <button id="btnAddImages" style="width: 100%;">Add Images (PNG/JPG/JPEG/WEBP)</button>
+        <div id="itemsList" class="list" style="margin-top: 6px; max-height: 180px;"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Device Frames</div>
+        <div class="row">
+          <select id="selectFrameCategory">
+            <option value="all">All</option>
+            <option value="ios">iOS</option>
+            <option value="android">Android</option>
+            <option value="others">Others</option>
+          </select>
+        </div>
+        <div id="framesList" class="list" style="max-height: 200px;"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Upload Custom Frame</div>
+        <input type="file" id="inputCustomFrame" accept="image/png,image/svg+xml" class="hidden">
+        <button id="btnUploadCustomFrame" style="width: 100%;">Upload PNG/SVG (Empty Device Frame)</button>
+        <div id="customFramesList" class="list" style="margin-top: 6px; max-height: 120px;"></div>
+      </div>
+    </aside>
+
+    <main class="center-panel">
+      <div class="canvas-toolbar">
+        <span>Canvas</span>
+        <div class="btn-group" style="width: auto;">
+          <button id="btnZoomOut">-</button>
+          <button id="btnZoomFit">Fit</button>
+          <button id="btnZoomIn">+</button>
+        </div>
+        <span id="zoomLabel">100%</span>
+        <span id="canvasSizeLabel" class="size-pill">— × —</span>
+        <span style="margin-left: auto;">Active: <span id="activeItemName">None</span></span>
+      </div>
+      <div class="canvas-wrapper">
+        <div id="canvas-container">
+          <canvas id="canvas"></canvas>
+        </div>
+      </div>
+    </main>
+
+    <aside class="right-panel">
+      <div class="section">
+        <div class="section-title">Layers</div>
+        <div id="layersList" class="list" style="max-height: 160px;"></div>
+        <div class="btn-group" style="margin-top: 6px; flex-wrap: wrap;">
+          <button id="btnAddText">Add Text</button>
+          <button id="btnRemoveLayer" disabled>Remove</button>
+          <button id="btnLayerUp" disabled>↑ Up</button>
+          <button id="btnLayerDown" disabled>↓ Down</button>
+          <button id="btnLayerFront" disabled>Front</button>
+          <button id="btnLayerBack" disabled>Back</button>
+        </div>
+      </div>
+
+      <div class="tabs" id="panelTabs">
+        <button class="tab active" data-tab="design">Design</button>
+        <button class="tab" data-tab="text">Text</button>
+        <button class="tab" data-tab="lang">Language</button>
+      </div>
+
+      <div class="tab-panel active" data-tabpanel="design">
+        <div class="section">
+          <div class="section-title">Canvas Size</div>
+          <div class="size-row">
+            <div class="size-field">
+              <label for="inputCanvasW">W</label>
+              <input type="number" id="inputCanvasW" min="16" max="8000" step="1">
+            </div>
+            <button id="btnRatioLock" class="icon-toggle active" title="Lock aspect ratio">&#128279;</button>
+            <div class="size-field">
+              <label for="inputCanvasH">H</label>
+              <input type="number" id="inputCanvasH" min="16" max="8000" step="1">
+            </div>
+          </div>
+          <div class="hint">Size: <span id="canvasSizeText">—</span> px &middot; zoom <span id="canvasZoomText">100%</span></div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Background</div>
+          <div class="row" style="margin-bottom: 0;">
+            <div style="flex: 1;">
+              <label for="inputBgColor">Color</label>
+              <input type="color" id="inputBgColor" value="#1a1a1f">
+            </div>
+            <div style="flex: 1;">
+              <label for="checkBgTransparent">Transparent</label>
+              <input type="checkbox" id="checkBgTransparent">
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Selection</div>
+          <div class="size-row">
+            <div class="size-field"><label for="inputSelX">X</label><input type="number" id="inputSelX" disabled></div>
+            <div class="size-field"><label for="inputSelY">Y</label><input type="number" id="inputSelY" disabled></div>
+          </div>
+          <div class="size-row">
+            <div class="size-field"><label for="inputSelW">W</label><input type="number" id="inputSelW" disabled></div>
+            <div class="size-field"><label for="inputSelH">H</label><input type="number" id="inputSelH" disabled></div>
+          </div>
+          <div class="btn-group" style="margin-top: 6px;">
+            <button id="btnAlignH" disabled>Center H</button>
+            <button id="btnAlignV" disabled>Center V</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Store Preset</div>
+          <div class="row">
+            <select id="selectStore">
+              <option value="appstore">App Store</option>
+              <option value="googleplay">Google Play</option>
+            </select>
+            <select id="selectPreset"></select>
+          </div>
+          <button id="btnApplyPreset" style="width: 100%;">Apply Preset Size</button>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tabpanel="text">
+        <div class="section">
+          <div class="section-title">Text Editor</div>
+          <div style="margin-bottom: 6px;">
+            <label for="inputFontFamily">Font Family</label>
+            <select id="inputFontFamily"></select>
+          </div>
+          <div class="row">
+            <div style="flex: 1.2;">
+              <label for="inputFontSize">Size</label>
+              <input type="number" id="inputFontSize" value="36" min="8" max="600">
+            </div>
+            <div style="flex: 2;">
+              <label>Quick Size</label>
+              <div class="chips" id="fontSizeChips">
+                <button data-size="24">24</button>
+                <button data-size="36">36</button>
+                <button data-size="48">48</button>
+                <button data-size="64">64</button>
+                <button data-size="80">80</button>
+                <button data-size="96">96</button>
+              </div>
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex: 1;">
+              <label for="inputFontColor">Color</label>
+              <input type="color" id="inputFontColor" value="#ffffff">
+            </div>
+            <div style="flex: 1;">
+              <label for="checkFontFill">Fill</label>
+              <input type="checkbox" id="checkFontFill" checked>
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex: 1;">
+              <label for="checkFontBold">Bold</label>
+              <input type="checkbox" id="checkFontBold">
+            </div>
+            <div style="flex: 1;">
+              <label for="checkFontItalic">Italic</label>
+              <input type="checkbox" id="checkFontItalic">
+            </div>
+          </div>
+          <div class="row">
+            <div style="flex: 1;">
+              <label>Align</label>
+              <div class="btn-group">
+                <button id="btnAlignLeft" class="icon-toggle active" title="Align left">L</button>
+                <button id="btnAlignCenter" class="icon-toggle" title="Align center">C</button>
+                <button id="btnAlignRight" class="icon-toggle" title="Align right">R</button>
+              </div>
+            </div>
+          </div>
+          <div class="row" style="margin-bottom: 0;">
+            <div style="flex: 1;">
+              <label for="inputCharSpacing">Letter Spacing (em)</label>
+              <input type="number" id="inputCharSpacing" value="0" step="0.01" min="-0.2" max="1">
+            </div>
+            <div style="flex: 1;">
+              <label for="inputLineHeight">Line Height</label>
+              <input type="number" id="inputLineHeight" value="1.16" step="0.05" min="0.7" max="3">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-panel" data-tabpanel="lang">
+        <div class="section">
+          <div class="section-title">Languages</div>
+          <div class="row">
+            <input type="text" id="inputNewLang" placeholder="e.g. TR" maxlength="5">
+            <button id="btnAddLang">Add</button>
+          </div>
+          <div id="langsList" class="list" style="max-height: 90px;"></div>
+          <div class="row" style="margin-top: 6px; margin-bottom: 0;">
+            <select id="selectActiveLang"></select>
+            <button id="btnTranslate">Translate</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Glossary (Preserve Terms)</div>
+          <div class="row" style="margin-bottom: 0;">
+            <input type="text" id="inputPreserveTerm" placeholder="e.g. Wi-Fi">
+            <button id="btnAddPreserve">Add</button>
+          </div>
+          <div id="preserveList" class="list" style="margin-top: 6px; max-height: 120px;"></div>
+        </div>
+      </div>
+    </aside>
+
+    <footer class="status-bar">
+      <span><span id="statusDot" class="status-dot offline"></span><span id="statusText">Offline</span></span>
+      <span id="statusProject">No project</span>
+      <span>v<span id="appVersion"></span></span>
+    </footer>
+  </div>
+
+  <div id="modalTranslate" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span>Translation Preview</span>
+        <button id="btnCloseTranslate" style="padding: 2px 8px;">&#10005;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size: 12px; color: var(--text-light); margin-bottom: 8px;">
+          Review and edit before applying. Source language: <strong id="translateSourceLang">EN</strong>
+        </p>
+        <table class="preview-table" id="translateTable">
+          <thead>
+            <tr><th>Layer</th><th>Lang</th><th>Source</th><th>Translation</th></tr>
+          </thead>
+          <tbody id="translateTableBody"></tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button id="btnCancelTranslate">Cancel</button>
+        <button id="btnApplyTranslate">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="vendor/fabric.min.js"></script>
+  <script src="vendor/jszip.min.js"></script>
+  <script src="vendor/FileSaver.min.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

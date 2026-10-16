@@ -1,0 +1,136 @@
+/* Figma-like design panel: tabs, size fields, chips, pills */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--panel-light);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 3px;
+}
+
+.tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  padding: 5px 6px;
+  font-size: 12px;
+  color: var(--text-light);
+  border-radius: 3px;
+}
+
+.tab:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.tab.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.tab-panel {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tab-panel.active {
+  display: flex;
+}
+
+.size-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.size-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.size-field label {
+  margin-bottom: 2px;
+}
+
+.size-field input[type="number"] {
+  width: 100%;
+}
+
+.icon-toggle {
+  flex: 0 0 auto !important;
+  padding: 5px 8px !important;
+  font-size: 11px !important;
+  min-width: 30px;
+  color: var(--text-light);
+}
+
+.icon-toggle.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.hint {
+  font-size: 11px;
+  color: var(--text-light);
+  letter-spacing: 0.3px;
+}
+
+.hint span {
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.size-pill {
+  background: var(--panel-light);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 2px 8px;
+  font-size: 11px;
+  color: var(--text-light);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.4px;
+}
+
+.chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.chips button {
+  padding: 4px 7px !important;
+  font-size: 11px !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.chips button.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.15);
+}
+
+#canvas-container.checker {
+  background-color: #2a2a30;
+  background-image:
+    linear-gradient(45deg, #3a3a42 25%, transparent 25%),
+    linear-gradient(-45deg, #3a3a42 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #3a3a42 75%),
+    linear-gradient(-45deg, transparent 75%, #3a3a42 75%);
+  background-size: 16px 16px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+}
+
+select optgroup {
+  background: var(--panel);
+  color: var(--text-light);
+  font-style: normal;
+  font-weight: 600;
+}
+
+select option {
+  background: var(--panel);
+  color: var(--text);
+}
