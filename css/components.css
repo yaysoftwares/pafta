@@ -29,6 +29,38 @@
   padding: 5px 8px;
 }
 
+/* Icon-only buttons: fixed square so they don't stretch like text buttons. */
+.btn-group .icon-btn,
+.btn-group button.icon-btn,
+.btn-group button:has(> svg:only-child) {
+  flex: 0 0 auto !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  line-height: 1 !important;
+  border-radius: 6px;
+}
+.btn-group .icon-btn svg,
+.btn-group button.icon-btn svg,
+.btn-group button:has(> svg:only-child) svg {
+  width: 16px !important;
+  height: 16px !important;
+  display: block !important;
+  pointer-events: none !important;
+  margin: 0 auto !important;
+}
+.btn-group .icon-btn.active,
+.btn-group button.icon-btn.active,
+.btn-group button:has(> svg:only-child).active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(59, 130, 246, 0.15);
+}
+
 .row {
   display: flex;
   gap: 6px;
@@ -244,4 +276,11 @@
 
 .hidden {
   display: none !important;
+}
+
+/* Drop zone hint when dragging an image over the canvas */
+.canvas-wrapper.drop-over {
+  outline: 3px dashed var(--primary);
+  outline-offset: -6px;
+  background: rgba(59, 130, 246, 0.08);
 }

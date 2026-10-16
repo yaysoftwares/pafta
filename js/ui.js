@@ -617,6 +617,11 @@ export class UI {
       }
       div.addEventListener('click', async () => {
         if (item.id === this.store.project.activeItemId) return;
+        // leaving template mode when a normal screenshot is picked
+        if (!item.templateId) {
+          const cur = this.store.getActiveItem();
+          if (cur && cur.templateId) cur.templateId = null;
+        }
         this.store.project.activeItemId = item.id;
         this.store.saveToSession();
         await this.canvasManager.setCurrentItem(item);
@@ -1428,6 +1433,7 @@ export class UI {
         }
       });
     }
+    this.bindDragDrop();
   }
 
   openSlotFilePicker(slotId) {
@@ -1436,6 +1442,47 @@ export class UI {
     input.dataset.slotId = slotId;
     input.value = '';
     input.click();
+  }
+
+  bindDragDrop() {
+    const wrap = document.querySelector('.canvas-wrapper');
+    if (!wrap) return;
+    const onDrag = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; wrap.classList.add('drop-over'); };
+    const offDrag = (e) => { e.preventDefault(); wrap.classList.remove('drop-over'); };
+    wrap.addEventListener('dragenter', onDrag);
+    wrap.addEventListener('dragover', onDrag);
+    wrap.addEventListener('dragleave', offDrag);
+    wrap.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      wrap.classList.remove('drop-over');
+      const files = Array.from(e.dataTransfer.files).filter((f) => f.type.startsWith('image/'));
+      if (!files.length) return;
+      const tm = this.templateManager;
+      const active = this.store.getActiveItem();
+      // Template active -> drop into the first empty slot
+      if (tm && active && active.templateId) {
+        const slots = tm.slotIds(active);
+        const emptySlot = slots.find((s) => !tm.slotHasImage(active, s));
+        if (emptySlot) {
+          try {
+            await tm.loadFileIntoSlot(active, emptySlot, files[0]);
+            await tm.renderTemplate(active);
+            this.renderSlotBanner(active);
+            this.renderLayers();
+            this.persistComposition();
+            this.flash(`Loaded into ${emptySlot}`);
+          } catch (err) {
+            console.error('Template slot drop failed:', err);
+            this.flash('Failed to load screenshot', true);
+          }
+          return;
+        }
+        this.flash('All template slots are filled', true);
+        return;
+      }
+      // Normal flow -> add as new screenshot item(s)
+      await this.handleImageFiles(files);
+    });
   }
 
   renderTemplates() {

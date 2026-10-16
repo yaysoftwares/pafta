@@ -72,20 +72,6 @@
   background: rgba(59, 130, 246, 0.15);
 }
 
-/* Icon-only buttons (Layers actions, undo/redo) */
-.btn-group button:has(svg) {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 5px 6px;
-  line-height: 1;
-}
-
-.btn-group button:has(svg) svg {
-  display: block;
-  pointer-events: none;
-}
-
 .hint {
   font-size: 11px;
   color: var(--text-light);
