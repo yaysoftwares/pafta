@@ -126,6 +126,10 @@ export class UI {
     this.btnToggleRulers = document.getElementById('btnToggleRulers');
     this.btnToggleGuides = document.getElementById('btnToggleGuides');
     this.btnToggleSnap = document.getElementById('btnToggleSnap');
+    this.btnToggleLeft = document.getElementById('btnToggleLeft');
+    this.btnToggleRight = document.getElementById('btnToggleRight');
+    this.leftPanel = document.getElementById('leftPanel');
+    this.rightPanel = document.getElementById('rightPanel');
     this.modalTranslate = document.getElementById('modalTranslate');
     this.btnCloseTranslate = document.getElementById('btnCloseTranslate');
     this.btnCancelTranslate = document.getElementById('btnCancelTranslate');
@@ -320,17 +324,38 @@ export class UI {
     this.btnAlignCenter.addEventListener('click', () => this.setTextAlign('center'));
     this.btnAlignRight.addEventListener('click', () => this.setTextAlign('right'));
 
-    // Tabs
-    this.panelTabs.addEventListener('click', (e) => {
-      const btn = e.target.closest('[data-tab]');
+    // Tabs (WAI-ARIA tablist with arrow-key navigation)
+    const selectTab = (btn) => {
       if (!btn) return;
       for (const b of this.panelTabs.querySelectorAll('.tab')) {
-        b.classList.toggle('active', b === btn);
+        const on = b === btn;
+        b.classList.toggle('active', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+        b.tabIndex = on ? 0 : -1;
       }
       for (const p of this.tabPanels) {
         p.classList.toggle('active', p.dataset.tabpanel === btn.dataset.tab);
       }
+    };
+    this.panelTabs.addEventListener('click', (e) => {
+      selectTab(e.target.closest('[data-tab]'));
     });
+    this.panelTabs.addEventListener('keydown', (e) => {
+      const tabs = [...this.panelTabs.querySelectorAll('.tab')];
+      const i = tabs.indexOf(document.activeElement);
+      if (i < 0) return;
+      let next = -1;
+      if (e.key === 'ArrowRight') next = (i + 1) % tabs.length;
+      else if (e.key === 'ArrowLeft') next = (i - 1 + tabs.length) % tabs.length;
+      else if (e.key === 'Home') next = 0;
+      else if (e.key === 'End') next = tabs.length - 1;
+      if (next >= 0) {
+        e.preventDefault();
+        tabs[next].focus();
+        selectTab(tabs[next]);
+      }
+    });
+    selectTab(this.panelTabs.querySelector('.tab.active'));
 
     // Canvas size
     this.inputCanvasW.addEventListener('change', () => this.applyCanvasSize('w'));
@@ -339,9 +364,10 @@ export class UI {
     this.inputCanvasH.addEventListener('keydown', (e) => { if (e.key === 'Enter') this.applyCanvasSize('h'); });
     this.btnRatioLock.addEventListener('click', () => {
       this.ratioLocked = !this.ratioLocked;
-      this.btnRatioLock.classList.toggle('active', this.ratioLocked);
+      this.setRatioLockUI();
       this.flash(this.ratioLocked ? 'Aspect ratio locked' : 'Aspect ratio unlocked');
     });
+    this.setRatioLockUI();
 
     // Background
     this.inputBgColor.addEventListener('change', () => this.applyBackground());
@@ -430,6 +456,49 @@ export class UI {
     this.modalTranslate.addEventListener('click', (e) => {
       if (e.target === this.modalTranslate) this.closeTranslateModal();
     });
+    // Keep keyboard focus inside the dialog while it is open.
+    this.modalTranslate.addEventListener('keydown', (e) => {
+      if (e.key !== 'Tab') return;
+      const focusable = this.modalTranslate.querySelectorAll(
+        'button:not([disabled]), textarea, input, select, a[href], [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+    window.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (this.modalTranslate && this.modalTranslate.classList.contains('active')) {
+        e.preventDefault();
+        this.closeTranslateModal();
+        return;
+      }
+      this.closeDrawers();
+    });
+
+    // Side-panel drawers (only interactive on small screens)
+    const toggleDrawer = (panel, btn) => {
+      if (!panel) return;
+      const open = !panel.classList.contains('open');
+      if (panel === this.leftPanel && this.rightPanel) this.rightPanel.classList.remove('open');
+      if (panel === this.rightPanel && this.leftPanel) this.leftPanel.classList.remove('open');
+      panel.classList.toggle('open', open);
+      if (btn) btn.setAttribute('aria-expanded', String(open));
+      this.syncDrawerButtons();
+    };
+    if (this.btnToggleLeft) {
+      this.btnToggleLeft.addEventListener('click', () => toggleDrawer(this.leftPanel, this.btnToggleLeft));
+    }
+    if (this.btnToggleRight) {
+      this.btnToggleRight.addEventListener('click', () => toggleDrawer(this.rightPanel, this.btnToggleRight));
+    }
 
     // Canvas callbacks
     cm.onSelection = (objects) => this.onSelection(objects);
@@ -527,9 +596,54 @@ export class UI {
   /** Reflect ruler/guide/snap state on the toolbar toggle buttons. */
   syncToggleButtons() {
     const rm = this.rulerManager;
-    if (this.btnToggleRulers) this.btnToggleRulers.classList.toggle('active', !!(rm && rm.enabled));
-    if (this.btnToggleGuides) this.btnToggleGuides.classList.toggle('active', !!(rm && rm.guidesEnabled));
-    if (this.btnToggleSnap) this.btnToggleSnap.classList.toggle('active', !!(rm && rm.snapEnabled));
+    const set = (btn, on) => {
+      if (!btn) return;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    };
+    set(this.btnToggleRulers, !!(rm && rm.enabled));
+    set(this.btnToggleGuides, !!(rm && rm.guidesEnabled));
+    set(this.btnToggleSnap, !!(rm && rm.snapEnabled));
+  }
+
+  /** Reflect the aspect-ratio lock state (class, aria-pressed, icon). */
+  setRatioLockUI() {
+    const btn = this.btnRatioLock;
+    if (!btn) return;
+    btn.classList.toggle('active', this.ratioLocked);
+    btn.setAttribute('aria-pressed', String(this.ratioLocked));
+    const icon = btn.querySelector('i');
+    if (icon) icon.className = this.ratioLocked ? 'bi bi-lock-fill' : 'bi bi-unlock-fill';
+  }
+
+  /** Reflect which side drawer is open (aria-expanded on the toggles). */
+  syncDrawerButtons() {
+    if (this.btnToggleLeft) {
+      this.btnToggleLeft.setAttribute('aria-expanded', String(!!(this.leftPanel && this.leftPanel.classList.contains('open'))));
+    }
+    if (this.btnToggleRight) {
+      this.btnToggleRight.setAttribute('aria-expanded', String(!!(this.rightPanel && this.rightPanel.classList.contains('open'))));
+    }
+  }
+
+  closeDrawers() {
+    if (this.leftPanel) this.leftPanel.classList.remove('open');
+    if (this.rightPanel) this.rightPanel.classList.remove('open');
+    this.syncDrawerButtons();
+  }
+
+  /** Make a clickable div behave like a button for keyboard/AT users. */
+  makeClickable(el, handler) {
+    el.setAttribute('role', 'button');
+    el.tabIndex = 0;
+    el.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        el.click();
+      }
+    });
+    if (handler) el.addEventListener('click', handler);
+    return el;
   }
 
   // ---------- helpers ----------
@@ -622,11 +736,11 @@ export class UI {
       div.appendChild(name);
       if (item.device && item.device.name) {
         const badge = document.createElement('span');
-        badge.style.cssText = 'font-size: 10px; color: var(--text-light);';
+        badge.className = 'item-meta';
         badge.textContent = item.device.name;
         div.appendChild(badge);
       }
-      div.addEventListener('click', async () => {
+      this.makeClickable(div, async () => {
         if (item.id === this.store.project.activeItemId) return;
         // leaving template mode when a normal screenshot is picked
         if (!item.templateId) {
@@ -638,6 +752,7 @@ export class UI {
         await this.canvasManager.setCurrentItem(item);
         this.update();
         this.canvasManager.zoomFit();
+        this.closeDrawers();
       });
       this.itemsList.appendChild(div);
     });
@@ -706,6 +821,7 @@ export class UI {
     none.className = 'item' + (!item || !item.frame ? ' active' : '');
     none.dataset.frameId = 'none';
     none.textContent = 'No Frame (raw screenshot)';
+    this.makeClickable(none);
     this.framesList.appendChild(none);
 
     for (const f of this.frameManager.getFrames(cat)) {
@@ -717,9 +833,10 @@ export class UI {
       name.textContent = f.name;
       div.appendChild(name);
       const dim = document.createElement('span');
-      dim.style.cssText = 'font-size: 10px; color: var(--text-light);';
+      dim.className = 'item-meta';
       dim.textContent = `${f.width}×${f.height}`;
       div.appendChild(dim);
+      this.makeClickable(div);
       this.framesList.appendChild(div);
     }
   }
@@ -740,6 +857,7 @@ export class UI {
       div.className = 'item' + (item && item.frame && item.frame.kind === 'custom' && item.frame.id === cf.id ? ' active' : '');
       div.dataset.frameId = cf.id;
       div.textContent = cf.name;
+      this.makeClickable(div);
       this.customFramesList.appendChild(div);
     }
   }
@@ -788,7 +906,7 @@ export class UI {
       name.className = 'layer-name';
       name.textContent = this.layerLabel(obj);
       div.appendChild(name);
-      div.addEventListener('click', () => {
+      this.makeClickable(div, () => {
         canvas.setActiveObject(obj);
         canvas.requestRenderAll();
         this.renderLayers();
@@ -851,7 +969,9 @@ export class UI {
   updateSizeChips() {
     const size = Number(this.inputFontSize.value);
     for (const btn of this.fontSizeChips.querySelectorAll('[data-size]')) {
-      btn.classList.toggle('active', Number(btn.dataset.size) === size);
+      const on = Number(btn.dataset.size) === size;
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', String(on));
     }
   }
 
@@ -877,9 +997,13 @@ export class UI {
   }
 
   updateAlignButtons(align) {
-    this.btnAlignLeft.classList.toggle('active', align !== 'center' && align !== 'right');
-    this.btnAlignCenter.classList.toggle('active', align === 'center');
-    this.btnAlignRight.classList.toggle('active', align === 'right');
+    const set = (btn, on) => {
+      btn.classList.toggle('active', on);
+      btn.setAttribute('aria-pressed', String(on));
+    };
+    set(this.btnAlignLeft, align !== 'center' && align !== 'right');
+    set(this.btnAlignCenter, align === 'center');
+    set(this.btnAlignRight, align === 'right');
   }
 
   // ---------- canvas size / background / selection geometry ----------
@@ -1203,10 +1327,12 @@ export class UI {
       name.textContent = lang;
       div.appendChild(name);
       const btn = document.createElement('button');
+      btn.type = 'button';
       btn.dataset.langRemove = lang;
-      btn.style.cssText = 'padding: 0 6px; font-size: 11px;';
+      btn.className = 'btn btn-outline-secondary btn-xs';
       btn.textContent = '×';
       btn.title = 'Remove language';
+      btn.setAttribute('aria-label', `Remove language ${lang}`);
       div.appendChild(btn);
       this.langsList.appendChild(div);
     }
@@ -1256,10 +1382,12 @@ export class UI {
       name.textContent = term;
       div.appendChild(name);
       const btn = document.createElement('button');
+      btn.type = 'button';
       btn.dataset.termRemove = term;
-      btn.style.cssText = 'padding: 0 6px; font-size: 11px;';
+      btn.className = 'btn btn-outline-secondary btn-xs';
       btn.textContent = '×';
       btn.title = 'Remove term';
+      btn.setAttribute('aria-label', `Remove term ${term}`);
       div.appendChild(btn);
       this.preserveList.appendChild(div);
     }
@@ -1328,6 +1456,8 @@ export class UI {
       this.translateTableBody.appendChild(tr);
     }
     this.modalTranslate.classList.add('active');
+    this._returnFocus = document.activeElement;
+    if (this.btnCloseTranslate) this.btnCloseTranslate.focus();
   }
 
   applyTranslations() {
@@ -1353,6 +1483,9 @@ export class UI {
     this.modalTranslate.classList.remove('active');
     this.pendingTranslations = null;
     this.translateTableBody.innerHTML = '';
+    const back = this._returnFocus;
+    this._returnFocus = null;
+    if (back && typeof back.focus === 'function' && document.contains(back)) back.focus();
   }
 
   // ---------- status / update ----------
@@ -1518,15 +1651,15 @@ export class UI {
       card.dataset.templateId = tpl.id;
       const bg = (tpl.bg && tpl.bg.color) || '#101014';
       card.innerHTML =
-        '<div style="width:100%;height:150px;background:' +
-        bg + ';display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.5);font-size:26px;">' +
-        (tpl.frame === 'device' ? '📱' : '🖼️') +
+        '<div class="template-thumb" style="background:' + bg + '">' +
+        '<i class="bi ' + (tpl.frame === 'device' ? 'bi-phone' : 'bi-image') + '" aria-hidden="true"></i>' +
         '</div>' +
         '<div class="template-meta">' +
         '<div class="template-cat">' + tpl.category + '</div>' +
         '<div class="template-name">' + tpl.name + '</div>' +
         '<div class="template-desc">' + tpl.desc + '</div>' +
         '</div>';
+      this.makeClickable(card);
       grid.appendChild(card);
     }
   }
@@ -1537,30 +1670,30 @@ export class UI {
     const tm = this.templateManager;
     if (!banner || !text || !tm) return;
     if (!item || !item.templateId) {
-      banner.style.display = 'none';
+      banner.hidden = true;
       return;
     }
     const slots = tm.slotIds(item);
     if (!slots.length) {
-      banner.style.display = 'none';
+      banner.hidden = true;
       return;
     }
     const parts = slots.map((s) => {
       const has = tm.slotHasImage(item, s);
       return (
-        '<span style="margin-right:8px;font-size:11px;color:var(--text-light);">' +
+        '<span class="slot-status">' +
         s.toUpperCase() +
         ': ' +
         (has
-          ? '<span style="color:var(--success)">✓</span>'
-          : '<button class="slot-load-btn" data-slot-id="' +
+          ? '<span class="slot-ok">✓</span>'
+          : '<button class="slot-load-btn btn btn-outline-secondary btn-xs" data-slot-id="' +
             s +
-            '" style="padding:2px 6px;font-size:10px;">load</button>') +
+            '">load</button>') +
         '</span>'
       );
     });
     text.innerHTML = parts.join(' ');
-    banner.style.display = 'flex';
+    banner.hidden = false;
   }
 
   async applyTemplate(tpl) {
