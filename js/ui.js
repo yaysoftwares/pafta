@@ -740,6 +740,18 @@ export class UI {
         badge.textContent = item.device.name;
         div.appendChild(badge);
       }
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.dataset.itemRemove = item.id;
+      remove.className = 'btn btn-outline-secondary btn-xs';
+      remove.textContent = '×';
+      remove.title = 'Remove screenshot';
+      remove.setAttribute('aria-label', `Remove screenshot ${item.name || i + 1}`);
+      remove.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.removeItem(item.id);
+      });
+      div.appendChild(remove);
       this.makeClickable(div, async () => {
         if (item.id === this.store.project.activeItemId) return;
         // leaving template mode when a normal screenshot is picked
@@ -756,6 +768,21 @@ export class UI {
       });
       this.itemsList.appendChild(div);
     });
+  }
+
+  async removeItem(id) {
+    const items = this.store.project.items;
+    const index = items.findIndex(it => it.id === id);
+    if (index === -1) return;
+    const removed = items[index];
+    const wasActive = this.store.project.activeItemId === id;
+    this.store.removeItem(id);
+    if (wasActive) {
+      await this.canvasManager.setCurrentItem(this.store.getActiveItem());
+      this.canvasManager.zoomFit();
+    }
+    this.update();
+    this.flash(`Removed ${removed.name || 'Screenshot'} — ${this.store.project.items.length} left`);
   }
 
   // ---------- frames ----------

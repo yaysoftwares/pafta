@@ -4,7 +4,7 @@ A local, privacy-friendly web app for framing and preparing App Store & Google P
 
 ## Features
 
-- Load multiple screenshots (PNG/JPG/JPEG/WEBP)
+- Load multiple screenshots (PNG/JPG/JPEG/WEBP) and remove them from the list individually
 - Apply device frames (iOS & Android, popular devices)
 - Add custom frames (PNG/SVG)
 - Add text layers with multi-language support
@@ -29,6 +29,9 @@ A local, privacy-friendly web app for framing and preparing App Store & Google P
 5. Add text and translate if needed
 6. Export individual or all as PNGs, or use **Download PNG** for the current view
 7. Export project as ZIP to move to another PC
+8. Remove a screenshot any time with the **×** button in the screenshot list
+
+Run the automated tests with `npm test` (Vitest + jsdom).
 
 ## Requirements
 
