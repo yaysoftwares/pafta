@@ -45,8 +45,11 @@
   border-radius: 6px;
 }
 .btn-group .icon-btn svg,
+.btn-group .icon-btn i.bi,
 .btn-group button.icon-btn svg,
-.btn-group button:has(> svg:only-child) svg {
+.btn-group button.icon-btn i.bi,
+.btn-group button:has(> svg:only-child) svg,
+.btn-group button:has(> svg:only-child) i.bi {
   width: 16px !important;
   height: 16px !important;
   display: block !important;
