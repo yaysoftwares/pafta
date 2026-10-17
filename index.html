@@ -17,16 +17,16 @@
 <body>
   <div class="app-container">
     <header class="topbar">
-      <button id="btnNew">New Project</button>
+      <button id="btnNew" class="btn btn-primary">New Project</button>
       <input type="file" id="inputOpenZip" accept=".zip" class="hidden">
-      <button id="btnOpenZip">Open ZIP</button>
-      <button id="btnExportZip">Export ZIP</button>
-      <button id="btnExportAll">Export All (PNG)</button>
-      <button id="btnExportSelected" disabled>Export Selected</button>
-      <button id="btnDownloadPng" disabled>Download PNG</button>
+      <button id="btnOpenZip" class="btn btn-outline">Open ZIP</button>
+      <button id="btnExportZip" class="btn btn-outline">Export ZIP</button>
+      <button id="btnExportAll" class="btn btn-outline">Export All (PNG)</button>
+      <button id="btnExportSelected" class="btn btn-outline" disabled>Export Selected</button>
+      <button id="btnDownloadPng" class="btn btn-outline" disabled>Download PNG</button>
       <div style="margin-left: auto; display: flex; gap: 6px; align-items: center;">
-        <input type="text" id="inputAppName" placeholder="App Name" style="width: 120px;">
-        <input type="text" id="inputProjectName" placeholder="Project Name" style="width: 120px;">
+        <input type="text" id="inputAppName" placeholder="App Name" class="form-control" style="width: 140px;">
+        <input type="text" id="inputProjectName" placeholder="Project Name" class="form-control" style="width: 140px;">
       </div>
     </header>
 
@@ -34,14 +34,14 @@
       <div class="section">
         <div class="section-title">Add Screenshots</div>
         <input type="file" id="inputImages" accept="image/*" multiple class="hidden">
-        <button id="btnAddImages" style="width: 100%;">Add Images (PNG/JPG/JPEG/WEBP)</button>
+        <button id="btnAddImages" class="btn btn-primary" style="width: 100%;">Add Images (PNG/JPG/JPEG/WEBP)</button>
         <div id="itemsList" class="list" style="margin-top: 6px; max-height: 180px;"></div>
       </div>
 
       <div class="section">
         <div class="section-title">Device Frames</div>
         <div class="row">
-          <select id="selectFrameCategory">
+          <select id="selectFrameCategory" class="form-control">
             <option value="all">All</option>
             <option value="ios">iOS</option>
             <option value="android">Android</option>
@@ -54,14 +54,14 @@
       <div class="section">
         <div class="section-title">Upload Custom Frame</div>
         <input type="file" id="inputCustomFrame" accept="image/png,image/svg+xml" class="hidden">
-        <button id="btnUploadCustomFrame" style="width: 100%;">Upload PNG/SVG (Empty Device Frame)</button>
+        <button id="btnUploadCustomFrame" class="btn btn-primary" style="width: 100%;">Upload PNG/SVG (Empty Device Frame)</button>
         <div id="customFramesList" class="list" style="margin-top: 6px; max-height: 120px;"></div>
       </div>
 
       <div class="section">
         <div class="section-title">Templates</div>
         <div class="row">
-          <select id="selectTemplateCategory">
+          <select id="selectTemplateCategory" class="form-control">
             <option value="all">All categories</option>
           </select>
         </div>
@@ -79,9 +79,9 @@
       <div class="canvas-toolbar">
         <span>Canvas</span>
         <div class="btn-group" style="width: auto;">
-          <button id="btnZoomOut">-</button>
-          <button id="btnZoomFit">Fit</button>
-          <button id="btnZoomIn">+</button>
+          <button id="btnZoomOut" class="btn btn-outline btn-sm">-</button>
+          <button id="btnZoomFit" class="btn btn-outline btn-sm">Fit</button>
+          <button id="btnZoomIn" class="btn btn-outline btn-sm">+</button>
         </div>
         <span id="zoomLabel">100%</span>
         <span id="canvasSizeLabel" class="size-pill">— × —</span>
@@ -94,9 +94,9 @@
           </button>
         </div>
         <div class="btn-group" style="width: auto;">
-          <button id="btnToggleRulers" class="icon-toggle active" title="Show rulers">Rulers</button>
-          <button id="btnToggleGuides" class="icon-toggle active" title="Show center guides">Guides</button>
-          <button id="btnToggleSnap" class="icon-toggle active" title="Snap to center and edges">Snap</button>
+          <button id="btnToggleRulers" class="btn btn-outline btn-sm active" title="Show rulers">Rulers</button>
+          <button id="btnToggleGuides" class="btn btn-outline btn-sm active" title="Show center guides">Guides</button>
+          <button id="btnToggleSnap" class="btn btn-outline btn-sm active" title="Snap to center and edges">Snap</button>
         </div>
         <span style="margin-left: auto;">Active: <span id="activeItemName">None</span></span>
       </div>
@@ -118,7 +118,7 @@
         <div class="section-title">Layers</div>
         <div id="layersList" class="list" style="max-height: 160px;"></div>
         <div class="btn-group" style="margin-top: 6px; flex-wrap: wrap;">
-          <button id="btnAddText" title="Add text layer">
+          <button id="btnAddText" title="Add text layer" class="icon-btn icon-toggle">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h16v2"/><path d="M12 5v14"/><path d="M9 19h6"/></svg>
           </button>
           <button id="btnAddShapeCircle" title="Add circle" class="icon-btn icon-toggle">
@@ -127,19 +127,19 @@
           <button id="btnAddShapeRect" title="Add rectangle" class="icon-btn icon-toggle">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="7" width="10" height="10" rx="2" ry="2"/></svg>
           </button>
-          <button id="btnRemoveLayer" disabled title="Remove layer">
+          <button id="btnRemoveLayer" disabled title="Remove layer" class="icon-btn icon-toggle">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/></svg>
           </button>
-          <button id="btnLayerUp" disabled title="Bring forward">
+          <button id="btnLayerUp" disabled title="Bring forward" class="icon-btn icon-toggle">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
           </button>
-          <button id="btnLayerDown" disabled title="Send backward">
+          <button id="btnLayerDown" disabled title="Send backward" class="icon-btn icon-toggle">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="M18 13l-6 6-6-6"/></svg>
           </button>
-          <button id="btnLayerFront" disabled title="Bring to front">
+          <button id="btnLayerFront" disabled title="Bring to front" class="icon-btn icon-toggle">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l4 4h-3v7h-2V7H8z"/><path d="M5 17h14v4H5z"/></svg>
           </button>
-          <button id="btnLayerBack" disabled title="Send to back">
+          <button id="btnLayerBack" disabled title="Send to back" class="icon-btn icon-toggle">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21l-4-4h3v-7h2v7h3z"/><path d="M5 3h14v4H5z"/></svg>
           </button>
         </div>
@@ -207,7 +207,7 @@
             </select>
             <select id="selectPreset"></select>
           </div>
-          <button id="btnApplyPreset" style="width: 100%;">Apply Preset Size</button>
+          <button id="btnApplyPreset" class="btn btn-primary" style="width: 100%;">Apply Preset Size</button>
         </div>
       </div>
 
@@ -216,7 +216,7 @@
           <div class="section-title">Text Editor</div>
           <div style="margin-bottom: 6px;">
             <label for="inputFontFamily">Font Family</label>
-            <select id="inputFontFamily"></select>
+            <select id="inputFontFamily" class="form-control"></select>
           </div>
           <div class="row">
             <div style="flex: 1.2;">
@@ -226,12 +226,12 @@
             <div style="flex: 2;">
               <label>Quick Size</label>
               <div class="chips" id="fontSizeChips">
-                <button data-size="24">24</button>
-                <button data-size="36">36</button>
-                <button data-size="48">48</button>
-                <button data-size="64">64</button>
-                <button data-size="80">80</button>
-                <button data-size="96">96</button>
+                <button data-size="24" class="btn btn-outline btn-sm">24</button>
+                <button data-size="36" class="btn btn-outline btn-sm active">36</button>
+                <button data-size="48" class="btn btn-outline btn-sm">48</button>
+                <button data-size="64" class="btn btn-outline btn-sm">64</button>
+                <button data-size="80" class="btn btn-outline btn-sm">80</button>
+                <button data-size="96" class="btn btn-outline btn-sm">96</button>
               </div>
             </div>
           </div>
@@ -282,21 +282,21 @@
         <div class="section">
           <div class="section-title">Languages</div>
           <div class="row">
-            <input type="text" id="inputNewLang" placeholder="e.g. TR" maxlength="5">
-            <button id="btnAddLang">Add</button>
+            <input type="text" id="inputNewLang" placeholder="e.g. TR" maxlength="5" class="form-control">
+            <button id="btnAddLang" class="btn btn-outline btn-sm">Add</button>
           </div>
           <div id="langsList" class="list" style="max-height: 90px;"></div>
           <div class="row" style="margin-top: 6px; margin-bottom: 0;">
-            <select id="selectActiveLang"></select>
-            <button id="btnTranslate">Translate</button>
+            <select id="selectActiveLang" class="form-control"></select>
+            <button id="btnTranslate" class="btn btn-primary">Translate</button>
           </div>
         </div>
 
         <div class="section">
           <div class="section-title">Glossary (Preserve Terms)</div>
           <div class="row" style="margin-bottom: 0;">
-            <input type="text" id="inputPreserveTerm" placeholder="e.g. Wi-Fi">
-            <button id="btnAddPreserve">Add</button>
+            <input type="text" id="inputPreserveTerm" placeholder="e.g. Wi-Fi" class="form-control">
+            <button id="btnAddPreserve" class="btn btn-outline btn-sm">Add</button>
           </div>
           <div id="preserveList" class="list" style="margin-top: 6px; max-height: 120px;"></div>
         </div>
@@ -328,8 +328,8 @@
         </table>
       </div>
       <div class="modal-footer">
-        <button id="btnCancelTranslate">Cancel</button>
-        <button id="btnApplyTranslate">Apply</button>
+        <button id="btnCancelTranslate" class="btn btn-outline">Cancel</button>
+        <button id="btnApplyTranslate" class="btn btn-primary">Apply</button>
       </div>
     </div>
   </div>
