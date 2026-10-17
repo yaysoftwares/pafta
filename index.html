@@ -1,77 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-bs-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
-  <title>Screenshot Framer</title>
-  <link rel="stylesheet" href="css/variables.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/layout.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/theme.css">
-  <link rel="stylesheet" href="css/fonts.css">
-  <link rel="stylesheet" href="css/design.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
-  <link rel="stylesheet" href="css/ui.css">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0f0f13">
+  <meta name="description" content="Pafta — a local, privacy-friendly screenshot framer for App Store & Google Play. No account, no backend, works offline.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <title>Pafta — Screenshot Framer</title>
 </head>
 <body>
   <div class="app-container">
     <header class="topbar">
+      <button id="btnToggleLeft" class="btn btn-outline-secondary icon-btn drawer-toggle" title="Toggle library panel" aria-label="Toggle library panel" aria-expanded="false" aria-controls="leftPanel">
+        <i class="bi bi-layout-sidebar" aria-hidden="true"></i>
+      </button>
       <button id="btnNew" class="btn btn-primary">New Project</button>
       <input type="file" id="inputOpenZip" accept=".zip" class="hidden">
-      <button id="btnOpenZip" class="btn btn-outline">Open ZIP</button>
-      <button id="btnExportZip" class="btn btn-outline">Export ZIP</button>
-      <button id="btnExportAll" class="btn btn-outline">Export All (PNG)</button>
-      <button id="btnExportSelected" class="btn btn-outline" disabled>Export Selected</button>
-      <button id="btnDownloadPng" class="btn btn-outline" disabled>Download PNG</button>
-      <div style="margin-left: auto; display: flex; gap: 6px; align-items: center;">
-        <input type="text" id="inputAppName" placeholder="App Name" class="form-control" style="width: 140px;">
-        <input type="text" id="inputProjectName" placeholder="Project Name" class="form-control" style="width: 140px;">
+      <button id="btnOpenZip" class="btn btn-outline-secondary">Open ZIP</button>
+      <button id="btnExportZip" class="btn btn-outline-secondary">Export ZIP</button>
+      <button id="btnExportAll" class="btn btn-outline-secondary">Export All (PNG)</button>
+      <button id="btnExportSelected" class="btn btn-outline-secondary" disabled>Export Selected</button>
+      <button id="btnDownloadPng" class="btn btn-outline-secondary" disabled>Download PNG</button>
+      <div class="topbar-right">
+        <input type="text" id="inputAppName" placeholder="App Name" aria-label="App name" class="form-control w-140">
+        <input type="text" id="inputProjectName" placeholder="Project Name" aria-label="Project name" class="form-control w-140">
       </div>
+      <button id="btnToggleRight" class="btn btn-outline-secondary icon-btn drawer-toggle" title="Toggle inspector panel" aria-label="Toggle inspector panel" aria-expanded="false" aria-controls="rightPanel">
+        <i class="bi bi-layout-sidebar-reverse" aria-hidden="true"></i>
+      </button>
     </header>
 
-    <aside class="left-panel">
+    <aside class="left-panel" id="leftPanel" aria-label="Screenshot library and templates">
       <div class="section">
         <div class="section-title">Add Screenshots</div>
         <input type="file" id="inputImages" accept="image/*" multiple class="hidden">
-        <button id="btnAddImages" class="btn btn-primary" style="width: 100%;">Add Images (PNG/JPG/JPEG/WEBP)</button>
-        <div id="itemsList" class="list" style="margin-top: 6px; max-height: 180px;"></div>
+        <button id="btnAddImages" class="btn btn-primary w-100">Add Images (PNG/JPG/JPEG/WEBP)</button>
+        <div id="itemsList" class="list list-md mt-sm"></div>
       </div>
 
       <div class="section">
         <div class="section-title">Device Frames</div>
-        <div class="row">
-          <select id="selectFrameCategory" class="form-control">
+        <div class="field-row">
+          <select id="selectFrameCategory" class="form-select" aria-label="Frame category">
             <option value="all">All</option>
             <option value="ios">iOS</option>
             <option value="android">Android</option>
             <option value="others">Others</option>
           </select>
         </div>
-        <div id="framesList" class="list" style="max-height: 200px;"></div>
+        <div id="framesList" class="list list-lg"></div>
       </div>
 
       <div class="section">
         <div class="section-title">Upload Custom Frame</div>
         <input type="file" id="inputCustomFrame" accept="image/png,image/svg+xml" class="hidden">
-        <button id="btnUploadCustomFrame" class="btn btn-primary" style="width: 100%;">Upload PNG/SVG (Empty Device Frame)</button>
-        <div id="customFramesList" class="list" style="margin-top: 6px; max-height: 120px;"></div>
+        <button id="btnUploadCustomFrame" class="btn btn-primary w-100">Upload PNG/SVG (Empty Device Frame)</button>
+        <div id="customFramesList" class="list list-sm mt-sm"></div>
       </div>
 
       <div class="section">
         <div class="section-title">Templates</div>
-        <div class="row">
-          <select id="selectTemplateCategory" class="form-control">
+        <div class="field-row">
+          <select id="selectTemplateCategory" class="form-select" aria-label="Template category">
             <option value="all">All categories</option>
           </select>
         </div>
         <div id="templatesGrid" class="templates-grid"></div>
-        <div class="hint" style="margin-top: 6px;">Pick a design, then click a phone slot to load your screenshot.</div>
+        <div class="hint mt-sm">Pick a design, then click a phone slot to load your screenshot.</div>
         <input type="file" id="inputTemplateImage" accept="image/*" class="hidden">
-        <div id="slotBanner" class="slot-banner" style="display:none;">
+        <div id="slotBanner" class="slot-banner mt-sm" hidden>
           <span class="template-cat">Slots</span>
-          <span id="slotBannerText" style="flex:1;font-size:11px;color:var(--text-light);"></span>
+          <span id="slotBannerText" class="slot-banner-text"></span>
         </div>
       </div>
     </aside>
@@ -79,80 +79,80 @@
     <main class="center-panel">
       <div class="canvas-toolbar">
         <span>Canvas</span>
-        <div class="btn-group" style="width: auto;">
-          <button id="btnZoomOut" class="btn btn-outline btn-sm">-</button>
-          <button id="btnZoomFit" class="btn btn-outline btn-sm">Fit</button>
-          <button id="btnZoomIn" class="btn btn-outline btn-sm">+</button>
+        <div class="btn-group" role="group" aria-label="Zoom controls">
+          <button id="btnZoomOut" class="btn btn-outline-secondary btn-sm" title="Zoom out" aria-label="Zoom out"><i class="bi bi-dash-lg" aria-hidden="true"></i></button>
+          <button id="btnZoomFit" class="btn btn-outline-secondary btn-sm" title="Fit canvas to view">Fit</button>
+          <button id="btnZoomIn" class="btn btn-outline-secondary btn-sm" title="Zoom in" aria-label="Zoom in"><i class="bi bi-plus-lg" aria-hidden="true"></i></button>
         </div>
         <span id="zoomLabel">100%</span>
         <span id="canvasSizeLabel" class="size-pill">— × —</span>
-        <div class="btn-group" style="width: auto;">
-          <button id="btnUndo" class="icon-btn icon-toggle" title="Undo (Ctrl+Z)">
-            <i class="bi bi-arrow-undo"></i>
+        <div class="btn-group" role="group" aria-label="History">
+          <button id="btnUndo" class="btn btn-outline-secondary icon-btn icon-toggle" title="Undo (Ctrl+Z)" aria-label="Undo">
+            <i class="bi bi-arrow-counterclockwise" aria-hidden="true"></i>
           </button>
-          <button id="btnRedo" class="icon-btn icon-toggle" title="Redo (Ctrl+Shift+Z)">
-            <i class="bi bi-arrow-redo"></i>
+          <button id="btnRedo" class="btn btn-outline-secondary icon-btn icon-toggle" title="Redo (Ctrl+Shift+Z)" aria-label="Redo">
+            <i class="bi bi-arrow-clockwise" aria-hidden="true"></i>
           </button>
         </div>
-        <div class="btn-group" style="width: auto;">
-          <button id="btnToggleRulers" class="btn btn-outline btn-sm active" title="Show rulers">Rulers</button>
-          <button id="btnToggleGuides" class="btn btn-outline btn-sm active" title="Show center guides">Guides</button>
-          <button id="btnToggleSnap" class="btn btn-outline btn-sm active" title="Snap to center and edges">Snap</button>
+        <div class="btn-group" role="group" aria-label="Canvas view options">
+          <button id="btnToggleRulers" class="btn btn-outline-secondary btn-sm active" title="Show rulers" aria-pressed="true">Rulers</button>
+          <button id="btnToggleGuides" class="btn btn-outline-secondary btn-sm active" title="Show center guides" aria-pressed="true">Guides</button>
+          <button id="btnToggleSnap" class="btn btn-outline-secondary btn-sm active" title="Snap to center and edges" aria-pressed="true">Snap</button>
         </div>
-        <span style="margin-left: auto;">Active: <span id="activeItemName">None</span></span>
+        <span class="ms-auto">Active: <span id="activeItemName">None</span></span>
       </div>
       <div class="canvas-wrapper">
         <div class="canvas-stage" id="canvasStage">
           <div class="ruler-corner" id="rulerCorner">px</div>
-          <canvas class="ruler-h" id="rulerH"></canvas>
-          <canvas class="ruler-v" id="rulerV"></canvas>
+          <canvas class="ruler-h" id="rulerH" aria-hidden="true"></canvas>
+          <canvas class="ruler-v" id="rulerV" aria-hidden="true"></canvas>
           <div id="canvas-container">
             <canvas id="canvas"></canvas>
-            <canvas id="guideOverlay"></canvas>
+            <canvas id="guideOverlay" aria-hidden="true"></canvas>
           </div>
         </div>
       </div>
     </main>
 
-    <aside class="right-panel">
+    <aside class="right-panel" id="rightPanel" aria-label="Layers and design controls">
       <div class="section">
         <div class="section-title">Layers</div>
-        <div id="layersList" class="list" style="max-height: 160px;"></div>
-        <div class="btn-group" style="margin-top: 6px; flex-wrap: wrap;">
-          <button id="btnAddText" title="Add text layer" class="icon-btn icon-toggle">
-            <i class="bi bi-text"></i>
+        <div id="layersList" class="list"></div>
+        <div class="btn-group flex-wrap mt-sm" role="group" aria-label="Layer actions">
+          <button id="btnAddText" title="Add text layer" aria-label="Add text layer" class="btn btn-outline-secondary icon-btn icon-toggle">
+            <i class="bi bi-fonts" aria-hidden="true"></i>
           </button>
-          <button id="btnAddShapeCircle" title="Add circle" class="icon-btn icon-toggle">
-            <i class="bi bi-circle"></i>
+          <button id="btnAddShapeCircle" title="Add circle" aria-label="Add circle" class="btn btn-outline-secondary icon-btn icon-toggle">
+            <i class="bi bi-circle" aria-hidden="true"></i>
           </button>
-          <button id="btnAddShapeRect" title="Add rectangle" class="icon-btn icon-toggle">
-            <i class="bi bi-square"></i>
+          <button id="btnAddShapeRect" title="Add rectangle" aria-label="Add rectangle" class="btn btn-outline-secondary icon-btn icon-toggle">
+            <i class="bi bi-square" aria-hidden="true"></i>
           </button>
-          <button id="btnRemoveLayer" disabled title="Remove layer" class="icon-btn icon-toggle">
-            <i class="bi bi-trash"></i>
+          <button id="btnRemoveLayer" disabled title="Remove layer" aria-label="Remove layer" class="btn btn-outline-secondary icon-btn icon-toggle">
+            <i class="bi bi-trash" aria-hidden="true"></i>
           </button>
-          <button id="btnLayerUp" disabled title="Bring forward" class="icon-btn icon-toggle">
-            <i class="bi bi-arrow-up"></i>
+          <button id="btnLayerUp" disabled title="Bring forward" aria-label="Bring forward" class="btn btn-outline-secondary icon-btn icon-toggle">
+            <i class="bi bi-arrow-up" aria-hidden="true"></i>
           </button>
-          <button id="btnLayerDown" disabled title="Send backward" class="icon-btn icon-toggle">
-            <i class="bi bi-arrow-down"></i>
+          <button id="btnLayerDown" disabled title="Send backward" aria-label="Send backward" class="btn btn-outline-secondary icon-btn icon-toggle">
+            <i class="bi bi-arrow-down" aria-hidden="true"></i>
           </button>
-          <button id="btnLayerFront" disabled title="Bring to front" class="icon-btn icon-toggle">
-            <i class="bi bi-arrow-up-square"></i>
+          <button id="btnLayerFront" disabled title="Bring to front" aria-label="Bring to front" class="btn btn-outline-secondary icon-btn icon-toggle">
+            <i class="bi bi-arrow-up-square" aria-hidden="true"></i>
           </button>
-          <button id="btnLayerBack" disabled title="Send to back" class="icon-btn icon-toggle">
-            <i class="bi bi-arrow-down-square"></i>
+          <button id="btnLayerBack" disabled title="Send to back" aria-label="Send to back" class="btn btn-outline-secondary icon-btn icon-toggle">
+            <i class="bi bi-arrow-down-square" aria-hidden="true"></i>
           </button>
         </div>
       </div>
 
-      <div class="tabs" id="panelTabs">
-        <button class="tab active" data-tab="design">Design</button>
-        <button class="tab" data-tab="text">Text</button>
-        <button class="tab" data-tab="lang">Language</button>
+      <div class="tabs" id="panelTabs" role="tablist" aria-label="Inspector sections">
+        <button class="tab active" id="tab-design" data-tab="design" role="tab" aria-selected="true" aria-controls="panel-design">Design</button>
+        <button class="tab" id="tab-text" data-tab="text" role="tab" aria-selected="false" aria-controls="panel-text" tabindex="-1">Text</button>
+        <button class="tab" id="tab-lang" data-tab="lang" role="tab" aria-selected="false" aria-controls="panel-lang" tabindex="-1">Language</button>
       </div>
 
-      <div class="tab-panel active" data-tabpanel="design">
+      <div class="tab-panel active" id="panel-design" data-tabpanel="design" role="tabpanel" aria-labelledby="tab-design" tabindex="0">
         <div class="section">
           <div class="section-title">Canvas Size</div>
           <div class="size-row">
@@ -160,7 +160,7 @@
               <label for="inputCanvasW">W</label>
               <input type="number" id="inputCanvasW" min="16" max="8000" step="1">
             </div>
-            <button id="btnRatioLock" class="icon-toggle active" title="Lock aspect ratio">&#128279;</button>
+            <button id="btnRatioLock" class="btn btn-outline-secondary icon-toggle active" title="Lock aspect ratio" aria-label="Lock aspect ratio" aria-pressed="true"><i class="bi bi-lock-fill" aria-hidden="true"></i></button>
             <div class="size-field">
               <label for="inputCanvasH">H</label>
               <input type="number" id="inputCanvasH" min="16" max="8000" step="1">
@@ -171,12 +171,12 @@
 
         <div class="section">
           <div class="section-title">Background</div>
-          <div class="row" style="margin-bottom: 0;">
-            <div style="flex: 1;">
+          <div class="field-row mb-0">
+            <div>
               <label for="inputBgColor">Color</label>
               <input type="color" id="inputBgColor" value="#1a1a1f">
             </div>
-            <div style="flex: 1;">
+            <div>
               <label for="checkBgTransparent">Transparent</label>
               <input type="checkbox" id="checkBgTransparent">
             </div>
@@ -193,85 +193,85 @@
             <div class="size-field"><label for="inputSelW">W</label><input type="number" id="inputSelW" disabled></div>
             <div class="size-field"><label for="inputSelH">H</label><input type="number" id="inputSelH" disabled></div>
           </div>
-          <div class="btn-group" style="margin-top: 6px;">
-            <button id="btnAlignH" disabled>Center H</button>
-            <button id="btnAlignV" disabled>Center V</button>
+          <div class="btn-group mt-sm">
+            <button id="btnAlignH" class="btn btn-outline-secondary">Center H</button>
+            <button id="btnAlignV" class="btn btn-outline-secondary">Center V</button>
           </div>
         </div>
 
         <div class="section">
           <div class="section-title">Store Preset</div>
-          <div class="row">
-            <select id="selectStore">
+          <div class="field-row">
+            <select id="selectStore" class="form-select" aria-label="Store">
               <option value="appstore">App Store</option>
               <option value="googleplay">Google Play</option>
             </select>
-            <select id="selectPreset"></select>
+            <select id="selectPreset" class="form-select" aria-label="Preset size"></select>
           </div>
-          <button id="btnApplyPreset" class="btn btn-primary" style="width: 100%;">Apply Preset Size</button>
+          <button id="btnApplyPreset" class="btn btn-primary w-100">Apply Preset Size</button>
         </div>
       </div>
 
-      <div class="tab-panel" data-tabpanel="text">
+      <div class="tab-panel" id="panel-text" data-tabpanel="text" role="tabpanel" aria-labelledby="tab-text" tabindex="0">
         <div class="section">
           <div class="section-title">Text Editor</div>
-          <div style="margin-bottom: 6px;">
+          <div class="mb-2">
             <label for="inputFontFamily">Font Family</label>
-            <select id="inputFontFamily" class="form-control"></select>
+            <select id="inputFontFamily" class="form-select"></select>
           </div>
-          <div class="row">
-            <div style="flex: 1.2;">
+          <div class="field-row">
+            <div class="flex-12">
               <label for="inputFontSize">Size</label>
               <input type="number" id="inputFontSize" value="36" min="8" max="600">
             </div>
-            <div style="flex: 2;">
-              <label>Quick Size</label>
-              <div class="chips" id="fontSizeChips">
-                <button data-size="24" class="btn btn-outline btn-sm">24</button>
-                <button data-size="36" class="btn btn-outline btn-sm active">36</button>
-                <button data-size="48" class="btn btn-outline btn-sm">48</button>
-                <button data-size="64" class="btn btn-outline btn-sm">64</button>
-                <button data-size="80" class="btn btn-outline btn-sm">80</button>
-                <button data-size="96" class="btn btn-outline btn-sm">96</button>
+            <div class="flex-2">
+              <label id="lblQuickSize">Quick Size</label>
+              <div class="chips" id="fontSizeChips" role="group" aria-labelledby="lblQuickSize">
+                <button data-size="24" class="btn btn-outline-secondary btn-sm" aria-pressed="false">24</button>
+                <button data-size="36" class="btn btn-outline-secondary btn-sm active" aria-pressed="true">36</button>
+                <button data-size="48" class="btn btn-outline-secondary btn-sm" aria-pressed="false">48</button>
+                <button data-size="64" class="btn btn-outline-secondary btn-sm" aria-pressed="false">64</button>
+                <button data-size="80" class="btn btn-outline-secondary btn-sm" aria-pressed="false">80</button>
+                <button data-size="96" class="btn btn-outline-secondary btn-sm" aria-pressed="false">96</button>
               </div>
             </div>
           </div>
-          <div class="row">
-            <div style="flex: 1;">
+          <div class="field-row">
+            <div>
               <label for="inputFontColor">Color</label>
               <input type="color" id="inputFontColor" value="#ffffff">
             </div>
-            <div style="flex: 1;">
+            <div>
               <label for="checkFontFill">Fill</label>
               <input type="checkbox" id="checkFontFill" checked>
             </div>
           </div>
-          <div class="row">
-            <div style="flex: 1;">
+          <div class="field-row">
+            <div>
               <label for="checkFontBold">Bold</label>
               <input type="checkbox" id="checkFontBold">
             </div>
-            <div style="flex: 1;">
+            <div>
               <label for="checkFontItalic">Italic</label>
               <input type="checkbox" id="checkFontItalic">
             </div>
           </div>
-          <div class="row">
-            <div style="flex: 1;">
-              <label>Align</label>
-              <div class="btn-group">
-                <button id="btnAlignLeft" class="icon-toggle active" title="Align left">L</button>
-                <button id="btnAlignCenter" class="icon-toggle" title="Align center">C</button>
-                <button id="btnAlignRight" class="icon-toggle" title="Align right">R</button>
+          <div class="field-row">
+            <div>
+              <label id="lblTextAlign">Align</label>
+              <div class="btn-group" role="group" aria-labelledby="lblTextAlign">
+                <button id="btnAlignLeft" class="btn btn-outline-secondary icon-toggle active" title="Align left" aria-label="Align left" aria-pressed="true">L</button>
+                <button id="btnAlignCenter" class="btn btn-outline-secondary icon-toggle" title="Align center" aria-label="Align center" aria-pressed="false">C</button>
+                <button id="btnAlignRight" class="btn btn-outline-secondary icon-toggle" title="Align right" aria-label="Align right" aria-pressed="false">R</button>
               </div>
             </div>
           </div>
-          <div class="row" style="margin-bottom: 0;">
-            <div style="flex: 1;">
+          <div class="field-row mb-0">
+            <div>
               <label for="inputCharSpacing">Letter Spacing (em)</label>
               <input type="number" id="inputCharSpacing" value="0" step="0.01" min="-0.2" max="1">
             </div>
-            <div style="flex: 1;">
+            <div>
               <label for="inputLineHeight">Line Height</label>
               <input type="number" id="inputLineHeight" value="1.16" step="0.05" min="0.7" max="3">
             </div>
@@ -279,58 +279,60 @@
         </div>
       </div>
 
-      <div class="tab-panel" data-tabpanel="lang">
+      <div class="tab-panel" id="panel-lang" data-tabpanel="lang" role="tabpanel" aria-labelledby="tab-lang" tabindex="0">
         <div class="section">
           <div class="section-title">Languages</div>
-          <div class="row">
-            <input type="text" id="inputNewLang" placeholder="e.g. TR" maxlength="5" class="form-control">
-            <button id="btnAddLang" class="btn btn-outline btn-sm">Add</button>
+          <div class="field-row">
+            <input type="text" id="inputNewLang" placeholder="e.g. TR" maxlength="5" aria-label="New language code" class="form-control">
+            <button id="btnAddLang" class="btn btn-outline-secondary btn-sm">Add</button>
           </div>
-          <div id="langsList" class="list" style="max-height: 90px;"></div>
-          <div class="row" style="margin-top: 6px; margin-bottom: 0;">
-            <select id="selectActiveLang" class="form-control"></select>
+          <div id="langsList" class="list list-xs"></div>
+          <div class="field-row mb-0 mt-sm">
+            <select id="selectActiveLang" class="form-select" aria-label="Active language"></select>
             <button id="btnTranslate" class="btn btn-primary">Translate</button>
           </div>
         </div>
 
         <div class="section">
           <div class="section-title">Glossary (Preserve Terms)</div>
-          <div class="row" style="margin-bottom: 0;">
-            <input type="text" id="inputPreserveTerm" placeholder="e.g. Wi-Fi" class="form-control">
-            <button id="btnAddPreserve" class="btn btn-outline btn-sm">Add</button>
+          <div class="field-row mb-0">
+            <input type="text" id="inputPreserveTerm" placeholder="e.g. Wi-Fi" aria-label="Term to preserve" class="form-control">
+            <button id="btnAddPreserve" class="btn btn-outline-secondary btn-sm">Add</button>
           </div>
-          <div id="preserveList" class="list" style="margin-top: 6px; max-height: 120px;"></div>
+          <div id="preserveList" class="list list-sm mt-sm"></div>
         </div>
       </div>
     </aside>
 
     <footer class="status-bar">
       <span><span id="statusDot" class="status-dot offline"></span><span id="statusText">Offline</span></span>
-      <span id="statusProject">No project</span>
+      <span id="statusProject" role="status">No project</span>
       <span>v<span id="appVersion"></span></span>
     </footer>
   </div>
 
-  <div id="modalTranslate" class="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <span>Translation Preview</span>
-        <button id="btnCloseTranslate" style="padding: 2px 8px;">&#10005;</button>
-      </div>
-      <div class="modal-body">
-        <p style="font-size: 12px; color: var(--text-light); margin-bottom: 8px;">
-          Review and edit before applying. Source language: <strong id="translateSourceLang">EN</strong>
-        </p>
-        <table class="preview-table" id="translateTable">
-          <thead>
-            <tr><th>Layer</th><th>Lang</th><th>Source</th><th>Translation</th></tr>
-          </thead>
-          <tbody id="translateTableBody"></tbody>
-        </table>
-      </div>
-      <div class="modal-footer">
-        <button id="btnCancelTranslate" class="btn btn-outline">Cancel</button>
-        <button id="btnApplyTranslate" class="btn btn-primary">Apply</button>
+  <div id="modalTranslate" class="modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="translateModalTitle">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title h6" id="translateModalTitle">Translation Preview</h2>
+          <button id="btnCloseTranslate" type="button" class="btn-close" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="note">
+            Review and edit before applying. Source language: <strong id="translateSourceLang">EN</strong>
+          </p>
+          <table class="preview-table" id="translateTable">
+            <thead>
+              <tr><th>Layer</th><th>Lang</th><th>Source</th><th>Translation</th></tr>
+            </thead>
+            <tbody id="translateTableBody"></tbody>
+          </table>
+        </div>
+        <div class="modal-footer">
+          <button id="btnCancelTranslate" class="btn btn-outline-secondary">Cancel</button>
+          <button id="btnApplyTranslate" class="btn btn-primary">Apply</button>
+        </div>
       </div>
     </div>
   </div>
@@ -338,8 +340,6 @@
   <script src="vendor/fabric.min.js"></script>
   <script src="vendor/jszip.min.js"></script>
   <script src="vendor/FileSaver.min.js"></script>
-  <script type="module" src="js/templates.js"></script>
-  <script type="module" src="js/tplapply.js"></script>
-  <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

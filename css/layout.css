@@ -7,6 +7,7 @@
     "left center right"
     "status status status";
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
 }
 
@@ -18,6 +19,13 @@
   align-items: center;
   gap: 6px;
   padding: 0 10px;
+}
+
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  align-items: center;
 }
 
 .left-panel {
@@ -61,4 +69,66 @@
   padding: 0 10px;
   font-size: 11px;
   color: var(--text-light);
+}
+
+/* Side panels only become slide-in drawers on small screens.
+   !important: .icon-btn/.btn also declare display, later in the cascade. */
+.drawer-toggle {
+  display: none !important;
+}
+
+@media (max-width: 1200px) {
+  .app-container {
+    grid-template-columns: 260px 1fr 280px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .app-container {
+    grid-template-columns: 220px 1fr 280px;
+  }
+}
+
+@media (max-width: 900px) {
+  .app-container {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "topbar"
+      "center"
+      "status";
+  }
+
+  .left-panel,
+  .right-panel {
+    position: fixed;
+    top: 40px;
+    bottom: 24px;
+    width: min(320px, 85vw);
+    z-index: 1040;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    transition: transform 0.2s ease;
+  }
+
+  .left-panel {
+    left: 0;
+    transform: translateX(-101%);
+  }
+
+  .right-panel {
+    right: 0;
+    transform: translateX(101%);
+  }
+
+  .left-panel.open,
+  .right-panel.open {
+    transform: translateX(0);
+  }
+
+  .drawer-toggle {
+    display: inline-flex !important;
+  }
+
+  .topbar-right .w-140 {
+    width: 110px;
+  }
 }

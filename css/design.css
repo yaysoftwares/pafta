@@ -59,11 +59,15 @@
 }
 
 .icon-toggle {
-  flex: 0 0 auto !important;
-  padding: 5px 8px !important;
-  font-size: 11px !important;
-  min-width: 30px;
+  flex: 0 0 auto;
   color: var(--text-light);
+}
+
+/* Text toggles (align L/C/R); square icon buttons keep .icon-btn sizing. */
+.icon-toggle:not(.icon-btn) {
+  padding: 5px 8px;
+  font-size: 11px;
+  min-width: 30px;
 }
 
 .icon-toggle.active {
@@ -101,8 +105,8 @@
 }
 
 .chips button {
-  padding: 4px 7px !important;
-  font-size: 11px !important;
+  padding: 4px 7px;
+  font-size: 11px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -213,13 +217,15 @@
   box-shadow: 0 0 0 1px var(--primary);
 }
 
+/* Template gallery thumbnail (placeholder artwork for each recipe). */
 .template-thumb {
   width: 100%;
-  aspect-ratio: 1290 / 2796;
-  max-height: 190px;
-  object-fit: cover;
-  object-position: top center;
-  display: block;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 26px;
   background: #101014;
 }
 
@@ -267,8 +273,24 @@
 
 .slot-banner button {
   flex: 0 0 auto;
-  padding: 4px 10px !important;
-  font-size: 11px !important;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.slot-banner-text {
+  flex: 1;
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+.slot-status {
+  margin-right: 8px;
+  font-size: 11px;
+  color: var(--text-light);
+}
+
+.slot-ok {
+  color: var(--success);
 }
   background: var(--panel);
   color: var(--text-light);

@@ -16,64 +16,91 @@
   border-bottom: 1px solid var(--border);
 }
 
+/* Official Bootstrap .btn-group handles the inline grouping; the app only
+   nudges sizing/spacing here. */
 .btn-group {
-  display: flex;
-  flex-wrap: wrap;
   gap: 4px;
 }
 
-.btn-group button {
+/* Groups that sit in a column (Design "Selection", Text "Align") fill it and
+   split evenly, matching the original layout. Toolbar groups stay inline. */
+.section > .btn-group,
+.field-row .btn-group {
+  display: flex;
+  width: 100%;
+}
+
+.section > .btn-group > .btn:not(.icon-btn),
+.field-row .btn-group > .btn:not(.icon-btn) {
   flex: 1;
-  min-width: 0;
-  font-size: 12px;
-  padding: 5px 8px;
 }
 
-/* Icon-only buttons: fixed square so they don't stretch like text buttons. */
-.btn-group .icon-btn,
-.btn-group button.icon-btn,
-.btn-group button:has(> svg:only-child) {
-  flex: 0 0 auto !important;
-  width: 34px !important;
-  min-width: 34px !important;
-  height: 34px !important;
-  padding: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  line-height: 1 !important;
-  border-radius: 6px;
-}
-.btn-group .icon-btn svg,
-.btn-group .icon-btn i.bi,
-.btn-group button.icon-btn svg,
-.btn-group button.icon-btn i.bi,
-.btn-group button:has(> svg:only-child) svg,
-.btn-group button:has(> svg:only-child) i.bi {
-  width: 16px !important;
-  height: 16px !important;
-  display: block !important;
-  pointer-events: none !important;
-  margin: 0 auto !important;
-}
-.btn-group .icon-btn.active,
-.btn-group button.icon-btn.active,
-.btn-group button:has(> svg:only-child).active {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: rgba(59, 130, 246, 0.15);
+.icon-btn {
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
-.row {
+/* Bootstrap's .btn-group > .btn { flex: 1 1 auto } is more specific, so square
+   icon buttons need an equally specific rule to keep their fixed size. */
+.btn-group > .icon-btn {
+  flex: 0 0 auto;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  padding: 0;
+}
+
+.icon-btn i.bi {
+  font-size: 16px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Compact buttons used for inline list actions (remove language/term). */
+.btn-xs {
+  padding: 0 6px;
+  font-size: 11px;
+}
+
+/* Flex row of form fields (NOT Bootstrap's grid .row). */
+.field-row {
   display: flex;
   gap: 6px;
   align-items: center;
   margin-bottom: 6px;
 }
 
-.row > * {
+.field-row > * {
   flex: 1;
   min-width: 0;
+}
+
+.flex-12 {
+  flex: 1.2;
+}
+
+.flex-2 {
+  flex: 2;
+}
+
+.w-140 {
+  width: 140px;
+}
+
+.mt-sm {
+  margin-top: 6px;
+}
+
+.note {
+  font-size: 12px;
+  color: var(--text-light);
+  margin-bottom: 8px;
 }
 
 .canvas-wrapper {
@@ -89,6 +116,7 @@
   padding: 6px 10px;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   font-size: 12px;
 }
@@ -128,17 +156,28 @@
   gap: 2px;
 }
 
-.layer-actions button {
-  padding: 2px 4px;
-  font-size: 11px;
-}
-
 .list {
-  max-height: 150px;
+  max-height: 160px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.list-xs {
+  max-height: 90px;
+}
+
+.list-sm {
+  max-height: 120px;
+}
+
+.list-md {
+  max-height: 180px;
+}
+
+.list-lg {
+  max-height: 200px;
 }
 
 .item {
@@ -168,6 +207,11 @@
 
 .item-row .layer-name {
   flex: 1;
+}
+
+.item-meta {
+  font-size: 10px;
+  color: var(--text-light);
 }
 
 .item-empty {
@@ -223,58 +267,6 @@
 
 .status-dot.offline {
   background: var(--danger);
-}
-
-.modal {
-  display: none;
-  position: fixed;
-  z-index: 1000;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.6);
-  align-items: center;
-  justify-content: center;
-}
-
-.modal.active {
-  display: flex;
-}
-
-.modal-content {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  width: 90%;
-  max-width: 700px;
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-}
-
-.modal-header {
-  padding: 10px 12px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.modal-body {
-  padding: 12px;
-  overflow-y: auto;
-  flex: 1;
-}
-
-.modal-footer {
-  padding: 10px 12px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 6px;
 }
 
 .hidden {
