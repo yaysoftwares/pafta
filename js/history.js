@@ -81,7 +81,11 @@ export class HistoryManager {
     this.captureAssets(p);
     const light = {
       ...p,
-      items: (p.items || []).map(({ dataUrl, ...rest }) => rest),
+      items: (p.items || []).map((it) => {
+        const rest = { ...it };
+        delete rest.dataUrl;
+        return rest;
+      }),
     };
     return JSON.stringify({
       project: light,

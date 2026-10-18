@@ -559,7 +559,7 @@ export class UI {
         const active = this.canvasManager && this.canvasManager.canvas
           ? this.canvasManager.canvas.getActiveObject() : null;
         if (active && (active.type === 'i-text' || active.isEditing)) return;
-      } catch (err) { /* ignore */ }
+      } catch { /* ignore */ }
       const key = (e.key || '').toLowerCase();
       if (key === 'z' && !e.shiftKey) {
         e.preventDefault();
@@ -945,7 +945,6 @@ export class UI {
 
   addTextLayer() {
     const canvas = this.canvasManager.canvas;
-    const lang = this.store.getActiveLang();
     const content = 'New Text';
     const texts = {};
     for (const l of this.store.project.langs) texts[l] = content;
@@ -1657,7 +1656,6 @@ export class UI {
   }
 
   renderTemplates() {
-    const tm = this.templateManager;
     const cat = this.selectTemplateCategory ? this.selectTemplateCategory.value : 'all';
     const list = getTemplatesByCategory(cat);
     if (this.selectTemplateCategory && this.selectTemplateCategory.children.length <= 1) {
@@ -1747,7 +1745,7 @@ export class UI {
 
   addShape(kind) {
     const cm = this.canvasManager;
-    const obj = cm.addShape(kind);
+    cm.addShape(kind);
     this.persistComposition();
     this.syncSelectionUI();
     this.renderLayers();

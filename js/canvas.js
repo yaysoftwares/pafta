@@ -65,7 +65,7 @@ export class CanvasManager {
     let b;
     try {
       b = o.getBoundingRect(true, true);
-    } catch (e) {
+    } catch {
       return false;
     }
     const W = this.canvas.getWidth();
@@ -96,7 +96,7 @@ export class CanvasManager {
         let b;
         try {
           b = o.getBoundingRect(true, true);
-        } catch (e) {
+        } catch {
           continue;
         }
         const W = this.canvas.getWidth();
@@ -452,10 +452,5 @@ export class CanvasManager {
     return obj;
   }
 
-  /** Fabric text objects on the canvas (textbox / i-text). */
-  getTextObjects() {
-    return this.canvas.getObjects().filter(
-      (o) => o.type === 'i-text' || o.type === 'textbox'
-    );
-  }
+
 }

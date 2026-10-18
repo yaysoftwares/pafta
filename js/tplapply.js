@@ -192,7 +192,7 @@ export class TemplateManager {
     c.add(g);
   }
 
-  async paintScreenshot(c, item, tpl, slot, dataUrl, W, H, S) {
+  async paintScreenshot(c, item, tpl, slot, dataUrl, W, H) {
     this.removeById('tpl-slot-' + slot.id);
     const r = this.slotRect(slot, W, H);
     const img = await this.cm.loadImageObj(dataUrl);

@@ -1,5 +1,4 @@
 import { APP_VERSION } from './constants.js';
-import { getTimestamp } from './utils.js';
 
 export class ProjectManager {
   constructor(store) {
