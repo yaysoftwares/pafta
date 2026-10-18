@@ -453,6 +453,11 @@ export class UI {
     this.btnCloseTranslate.addEventListener('click', () => this.closeTranslateModal());
     this.btnCancelTranslate.addEventListener('click', () => this.closeTranslateModal());
     this.btnApplyTranslate.addEventListener('click', () => this.applyTranslations());
+    this.translateTableBody.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-translate-retry]');
+      if (!btn) return;
+      await this.retryTranslateRow(Number(btn.dataset.translateRetry));
+    });
     this.modalTranslate.addEventListener('click', (e) => {
       if (e.target === this.modalTranslate) this.closeTranslateModal();
     });
@@ -1439,25 +1444,19 @@ export class UI {
       return;
     }
 
+    this._translateAbort?.abort();
+    this._translateAbort = new AbortController();
+
     const rows = [];
-    this.flash('Translating…');
     for (const layer of layers) {
       const srcText = ((layer.texts && layer.texts[source]) || layer.text || '').trim();
       if (!srcText) continue;
       for (const target of targets) {
-        let result = '';
-        let error = false;
-        try {
-          const raw = await this.translateManager.translateText(srcText, source.toLowerCase(), target.toLowerCase());
-          result = this.translateManager.applyGlossary(raw);
-        } catch (e) {
-          console.error('Translate failed:', e);
-          error = true;
-        }
-        rows.push({ layer, source, target, srcText, result, error });
+        rows.push({ layer, source, target, srcText, result: '', error: false, translated: false });
       }
     }
     if (!rows.length) {
+      this._translateAbort = null;
       this.flash('Nothing to translate — text is empty', true);
       return;
     }
@@ -1465,7 +1464,45 @@ export class UI {
     this.pendingTranslations = rows;
     this.translateSourceLang.textContent = source;
     this.translateTableBody.innerHTML = '';
-    for (const row of rows) {
+    this.renderTranslateRows();
+    this.modalTranslate.classList.add('active');
+    this._returnFocus = document.activeElement;
+    if (this.btnCloseTranslate) this.btnCloseTranslate.focus();
+
+    try {
+      for (const target of targets) {
+        const targetRows = rows.filter(r => r.target === target);
+        const results = await this.translateManager.translateMany(
+          targetRows.map(r => r.srcText),
+          source.toLowerCase(),
+          target.toLowerCase(),
+          { concurrency: 3, signal: this._translateAbort.signal },
+        );
+        results.forEach((result, k) => {
+          const row = targetRows[k];
+          row.translated = true;
+          if (result.ok) {
+            row.result = this.translateManager.applyGlossary(result.text);
+            row.error = false;
+          } else {
+            row.error = true;
+          }
+        });
+        this.renderTranslateRows();
+      }
+    } catch (e) {
+      // Aborted (modal closed while running): discard everything, apply nothing.
+      console.info('Translation cancelled:', e);
+      this._translateAbort = null;
+      return;
+    }
+    this._translateAbort = null;
+  }
+
+  renderTranslateRows() {
+    if (!this.pendingTranslations) return;
+    this.translateTableBody.innerHTML = '';
+    for (const [index, row] of this.pendingTranslations.entries()) {
       const tr = document.createElement('tr');
       const tdLayer = document.createElement('td');
       tdLayer.textContent = this.layerLabel(row.layer);
@@ -1477,14 +1514,45 @@ export class UI {
       const ta = document.createElement('textarea');
       ta.value = row.result;
       if (row.error) ta.placeholder = 'Translation failed — type manually';
+      else if (!row.translated) ta.placeholder = 'Translating…';
+      if (!row.translated) ta.disabled = true;
       tdRes.appendChild(ta);
-      row.el = ta;
+      if (row.error) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-sm btn-outline-secondary';
+        btn.textContent = 'Retry';
+        btn.dataset.translateRetry = index;
+        btn.setAttribute('aria-label', `Retry ${row.target} translation`);
+        tdRes.appendChild(btn);
+      }
       tr.append(tdLayer, tdLang, tdSrc, tdRes);
       this.translateTableBody.appendChild(tr);
     }
-    this.modalTranslate.classList.add('active');
-    this._returnFocus = document.activeElement;
-    if (this.btnCloseTranslate) this.btnCloseTranslate.focus();
+  }
+
+  async retryTranslateRow(index) {
+    const row = this.pendingTranslations?.[index];
+    if (!row || !row.error) return;
+    try {
+      const results = await this.translateManager.translateMany(
+        [row.srcText],
+        row.source,
+        row.target,
+        { concurrency: 1, signal: this._translateAbort?.signal },
+      );
+      row.translated = true;
+      if (results[0]?.ok) {
+        row.result = this.translateManager.applyGlossary(results[0].text);
+        row.error = false;
+      } else {
+        row.error = true;
+      }
+    } catch (e) {
+      row.translated = true;
+      row.error = true;
+    }
+    this.renderTranslateRows();
   }
 
   applyTranslations() {
@@ -1507,6 +1575,8 @@ export class UI {
   }
 
   closeTranslateModal() {
+    this._translateAbort?.abort();
+    this._translateAbort = null;
     this.modalTranslate.classList.remove('active');
     this.pendingTranslations = null;
     this.translateTableBody.innerHTML = '';
