@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { vi } from 'vitest';
 import { UI } from '../../js/ui.js';
 import { Store } from '../../js/store.js';
+import { MemoryAdapter } from '../../js/storage.js';
 
 const indexHtml = readFileSync(resolve(process.cwd(), 'index.html'), 'utf8');
 const bodyHtml = indexHtml.match(/<body[^>]*>([\s\S]*)<\/body>/i)?.[1] ?? '';
@@ -78,10 +79,11 @@ export function makeItem(id, name = 'Screenshot', dataUrl = 'data:image/png;base
 }
 
 /** Build a fully wired UI on top of a fresh Store and the real markup. */
-export function createUI() {
+export async function createUI() {
   installDom();
   sessionStorage.clear();
-  const store = new Store();
+  const store = new Store({ adapter: new MemoryAdapter() });
+  await store.hydrate();
   const managers = makeManagers();
   const ui = new UI(
     store,

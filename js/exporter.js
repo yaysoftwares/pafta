@@ -71,7 +71,7 @@ export class Exporter {
       await this.canvasManager.setCurrentItem(original);
     }
     if (originalLang) this.canvasManager.applyLang(originalLang);
-    this.store.saveToSession();
+    this.store.persist();
     return zip.generateAsync({ type: 'blob' });
   }
 }

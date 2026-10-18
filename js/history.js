@@ -101,7 +101,7 @@ export class HistoryManager {
       this.store.project = { ...data.project, items };
       this.store.glossary = data.glossary;
       this.store.activeLang = data.activeLang || null;
-      this.store.saveToSession();
+      this.store.persist();
     } finally {
       this.applying = false;
     }
