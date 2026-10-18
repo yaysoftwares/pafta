@@ -9,8 +9,8 @@ const itemRows = () => Array.from(document.querySelectorAll('#itemsList .item-ro
 describe('screenshot list — removing items', () => {
   let ctx;
 
-  beforeEach(() => {
-    ctx = createUI();
+  beforeEach(async () => {
+    ctx = await createUI();
   });
 
   it('shows an empty state when there are no screenshots', () => {

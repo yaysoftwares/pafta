@@ -16,6 +16,7 @@ export class UI {
     this.history = history || null;
     this.templateManager = templateManager || null;
     this.pendingTranslations = null;
+    this.store.onPersistError = (err) => this.flash('Kaydedilemedi — tarayıcı deposu dolu', true);
     this.ratioLocked = true;
 
     this.initElements();
@@ -760,7 +761,7 @@ export class UI {
           if (cur && cur.templateId) cur.templateId = null;
         }
         this.store.project.activeItemId = item.id;
-        this.store.saveToSession();
+        this.store.persist();
         await this.canvasManager.setCurrentItem(item);
         this.update();
         this.canvasManager.zoomFit();
@@ -1308,7 +1309,7 @@ export class UI {
       w: this.canvasManager.canvas.getWidth(),
       h: this.canvasManager.canvas.getHeight(),
     };
-    this.store.saveToSession();
+    this.store.persist();
   }
 
   // ---------- languages ----------

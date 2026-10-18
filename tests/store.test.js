@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Store } from '../js/store.js';
-
-const STORAGE_KEY = 'screenshot-framer-store';
+import { MemoryAdapter, STORAGE_KEY } from '../js/storage.js';
 
 /** Build a plain item object shaped like the ones the app stores. */
 function makeItem(id, name = 'Screenshot', dataUrl = 'data:image/png;base64,AAAA') {
@@ -9,11 +8,12 @@ function makeItem(id, name = 'Screenshot', dataUrl = 'data:image/png;base64,AAAA
 }
 
 describe('Store', () => {
+  let adapter;
   let store;
 
   beforeEach(() => {
-    sessionStorage.clear();
-    store = new Store();
+    adapter = new MemoryAdapter();
+    store = new Store({ adapter });
   });
 
   describe('addItem', () => {
@@ -76,7 +76,7 @@ describe('Store', () => {
     it('clears the selection when the last item is removed', () => {
       store.addItem(makeItem('a'));
       store.removeItem('a');
-      expect(store.project.items).toEqual([]);
+      expect(store.project.items).toHaveLength(0);
       expect(store.project.activeItemId).toBeNull();
       expect(store.getActiveItem()).toBeNull();
     });
@@ -88,20 +88,23 @@ describe('Store', () => {
       expect(store.project.activeItemId).toBe('a');
     });
 
-    it('persists the removal to sessionStorage', () => {
+    it('persists the removal to the adapter', async () => {
       store.addItem(makeItem('a'));
       store.addItem(makeItem('b'));
       store.removeItem('a');
-      const saved = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
+      await store.whenPersisted();
+      const saved = JSON.parse(await adapter.get(STORAGE_KEY));
       expect(saved.project.items.map(i => i.id)).toEqual(['b']);
       expect(saved.project.activeItemId).toBe('b');
     });
 
-    it('survives a reload through sessionStorage', () => {
+    it('survives a reload through the adapter', async () => {
       store.addItem(makeItem('a'));
       store.addItem(makeItem('b'));
       store.removeItem('a');
-      const reloaded = new Store();
+      await store.whenPersisted();
+      const reloaded = new Store({ adapter });
+      await reloaded.hydrate();
       expect(reloaded.project.items.map(i => i.id)).toEqual(['b']);
       expect(reloaded.getActiveItem().id).toBe('b');
     });

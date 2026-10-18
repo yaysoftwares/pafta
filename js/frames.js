@@ -22,7 +22,7 @@ export class FrameManager {
     const frame = { id: 'custom_' + Date.now() + Math.floor(Math.random() * 1000), name, dataUrl: url };
     if (this.store) {
       this.store.customFrames.push(frame);
-      this.store.saveToSession();
+      this.store.persist();
     } else {
       this.customFrames.push(frame);
     }

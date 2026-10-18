@@ -17,7 +17,7 @@ export class Importer {
       const glossaryText = await content.file('glossary.json').async('text');
       const glossary = JSON.parse(glossaryText);
       this.store.glossary = glossary;
-      this.store.saveToSession();
+      this.store.persist();
     }
     
     return true;

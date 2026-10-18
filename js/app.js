@@ -26,6 +26,9 @@ class App {
     this.history = new HistoryManager(this.store);
     this.templateManager = new TemplateManager(this.store, this.canvasManager, this.textManager);
     this.store.onChange = () => this.history.schedule();
+  }
+
+  initUI() {
     this.ui = new UI(
       this.store,
       this.canvasManager,
@@ -44,6 +47,8 @@ class App {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  new App();
+document.addEventListener('DOMContentLoaded', async () => {
+  const app = new App();
+  await app.store.hydrate();
+  app.initUI();
 });

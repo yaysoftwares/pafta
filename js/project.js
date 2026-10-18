@@ -8,7 +8,7 @@ export class ProjectManager {
 
   newProject() {
     this.store.reset();
-    this.store.saveToSession();
+    this.store.persist();
   }
 
   async exportZip() {
@@ -69,7 +69,7 @@ export class ProjectManager {
       const glossaryText = await content.file('glossary.json').async('text');
       const glossary = JSON.parse(glossaryText);
       this.store.glossary = glossary;
-      this.store.saveToSession();
+      this.store.persist();
     }
     
     return true;

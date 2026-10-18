@@ -110,10 +110,10 @@ export class TemplateManager {
         const img = new Image();
         img.onload = () => {
           if (!item.width) { item.width = img.naturalWidth; item.height = img.naturalHeight; }
-          this.store.saveToSession();
+          this.store.persist();
           resolve(item.templateSlots[slotId]);
         };
-        img.onerror = () => { this.store.saveToSession(); resolve(item.templateSlots[slotId]); };
+        img.onerror = () => { this.store.persist(); resolve(item.templateSlots[slotId]); };
         img.src = e.target.result;
       };
       reader.onerror = reject;
