@@ -10,10 +10,6 @@ const STORAGE_KEY = 'screenshot-framer-rulers';
 const SNAP_PX = 7; // snap distance in screen px
 
 const BG = '#252529';
-const PASTE_BG = '#16161b';
-const ARTBOARD_EDGE = 'rgba(148,163,184,0.7)';
-const CHECK_DARK = '#2a2a30';
-const CHECK_LIGHT = '#3a3a42';
 const TICK_MINOR = '#3f3f47';
 const TICK_MAJOR = '#5a5a64';
 const LABEL = '#b3b3b7';
@@ -62,7 +58,7 @@ export class RulerManager {
       if (typeof p.rulers === 'boolean') this.enabled = p.rulers;
       if (typeof p.guides === 'boolean') this.guidesEnabled = p.guides;
       if (typeof p.snap === 'boolean') this.snapEnabled = p.snap;
-    } catch (e) {
+    } catch {
       // ignore corrupt prefs
     }
   }
@@ -74,7 +70,7 @@ export class RulerManager {
         guides: this.guidesEnabled,
         snap: this.snapEnabled,
       }));
-    } catch (e) {
+    } catch {
       // ignore
     }
   }
@@ -453,7 +449,7 @@ export class RulerManager {
     let dx = null;
     let bestXd = thr + 1;
     for (const tgt of targetsX) {
-      for (const [anchor, aKind] of [[mLeft, 'left'], [mCenterX, 'center'], [mRight, 'right']]) {
+      for (const [anchor] of [[mLeft, 'left'], [mCenterX, 'center'], [mRight, 'right']]) {
         const delta = tgt.pos - anchor;
         const ad = Math.abs(delta);
         if (ad <= thr && ad < bestXd) {
