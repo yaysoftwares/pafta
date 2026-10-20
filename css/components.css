@@ -253,6 +253,14 @@
   resize: vertical;
 }
 
+/* Retry button of a failed translation line — comfortable tap target on phones */
+@media (max-width: 575.98px) {
+  .preview-table .btn {
+    min-height: 44px;
+    margin-top: 4px;
+  }
+}
+
 .status-dot {
   width: 6px;
   height: 6px;

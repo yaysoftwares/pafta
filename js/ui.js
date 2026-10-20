@@ -453,6 +453,11 @@ export class UI {
     this.btnCloseTranslate.addEventListener('click', () => this.closeTranslateModal());
     this.btnCancelTranslate.addEventListener('click', () => this.closeTranslateModal());
     this.btnApplyTranslate.addEventListener('click', () => this.applyTranslations());
+    this.translateTableBody.addEventListener('click', async (e) => {
+      const btn = e.target.closest('[data-translate-retry]');
+      if (!btn) return;
+      await this.retryTranslateRow(Number(btn.dataset.translateRetry));
+    });
     this.modalTranslate.addEventListener('click', (e) => {
       if (e.target === this.modalTranslate) this.closeTranslateModal();
     });
@@ -1439,33 +1444,82 @@ export class UI {
       return;
     }
 
+    this._translateAbort?.abort();
+    const abort = new AbortController();
+    this._translateAbort = abort;
+
     const rows = [];
-    this.flash('Translating…');
     for (const layer of layers) {
       const srcText = ((layer.texts && layer.texts[source]) || layer.text || '').trim();
       if (!srcText) continue;
       for (const target of targets) {
-        let result = '';
-        let error = false;
-        try {
-          const raw = await this.translateManager.translateText(srcText, source.toLowerCase(), target.toLowerCase());
-          result = this.translateManager.applyGlossary(raw);
-        } catch (e) {
-          console.error('Translate failed:', e);
-          error = true;
-        }
-        rows.push({ layer, source, target, srcText, result, error });
+        rows.push({
+          layer, source, target, srcText,
+          result: '', error: false, translated: false, retrying: false, edited: false,
+        });
       }
     }
     if (!rows.length) {
+      this._translateAbort = null;
       this.flash('Nothing to translate — text is empty', true);
       return;
     }
 
     this.pendingTranslations = rows;
     this.translateSourceLang.textContent = source;
+    this.buildTranslateRows();
+    this.modalTranslate.classList.add('active');
+    this._returnFocus = document.activeElement;
+    if (this.btnCloseTranslate) this.btnCloseTranslate.focus();
+
+    // The batch runs in the background so the preview streams line by line;
+    // Apply waits for it instead of dropping the lines that are still pending.
+    this._translateRun = (async () => {
+      for (const target of targets) {
+        const targetRows = rows.filter(r => r.target === target);
+        const results = await this.translateManager.translateMany(
+          targetRows.map(r => r.srcText),
+          source.toLowerCase(),
+          target.toLowerCase(),
+          { concurrency: 3, signal: abort.signal },
+        );
+        results.forEach((result, k) => {
+          const row = targetRows[k];
+          row.translated = true;
+          if (result.ok) {
+            row.result = this.translateManager.applyGlossary(result.text);
+            row.error = false;
+          } else {
+            row.error = true;
+          }
+        });
+        this.renderTranslateRows();
+      }
+    })();
+
+    try {
+      await this._translateRun;
+    } catch (e) {
+      // Aborted (modal closed while running): discard everything, apply nothing.
+      console.info('Translation cancelled:', e);
+      if (this._translateAbort === abort) this._translateAbort = null;
+      this.updateTranslateFooter();
+      return;
+    }
+    this._translateRun = null;
+    this.updateTranslateFooter();
+
+    const failed = rows.filter(r => r.error).length;
+    if (failed) {
+      this.flash(`${failed} of ${rows.length} lines failed to translate — retry them`, true);
+    }
+  }
+
+  // Creates the preview rows once. Later updates mutate the existing cells so
+  // manual edits (and focus) survive when a translation batch finishes.
+  buildTranslateRows() {
     this.translateTableBody.innerHTML = '';
-    for (const row of rows) {
+    for (const [index, row] of this.pendingTranslations.entries()) {
       const tr = document.createElement('tr');
       const tdLayer = document.createElement('td');
       tdLayer.textContent = this.layerLabel(row.layer);
@@ -1476,22 +1530,109 @@ export class UI {
       const tdRes = document.createElement('td');
       const ta = document.createElement('textarea');
       ta.value = row.result;
-      if (row.error) ta.placeholder = 'Translation failed — type manually';
+      ta.setAttribute('aria-label', `${row.target} translation of "${row.srcText}"`);
+      ta.addEventListener('input', () => {
+        row.edited = true;
+      });
       tdRes.appendChild(ta);
-      row.el = ta;
       tr.append(tdLayer, tdLang, tdSrc, tdRes);
       this.translateTableBody.appendChild(tr);
+      row.el = ta;
+      row.tdRes = tdRes;
+      this.updateTranslateRow(index, row);
     }
-    this.modalTranslate.classList.add('active');
-    this._returnFocus = document.activeElement;
-    if (this.btnCloseTranslate) this.btnCloseTranslate.focus();
+    this.updateTranslateFooter();
   }
 
-  applyTranslations() {
+  // Apply stays disabled while a line is still being translated.
+  updateTranslateFooter() {
+    if (!this.btnApplyTranslate) return;
+    const pending = (this.pendingTranslations || []).some(r => !r.translated);
+    this.btnApplyTranslate.disabled = pending;
+  }
+
+  renderTranslateRows() {
     if (!this.pendingTranslations) return;
+    for (const [index, row] of this.pendingTranslations.entries()) {
+      this.updateTranslateRow(index, row);
+    }
+  }
+
+  updateTranslateRow(index, row) {
+    const ta = row.el;
+    if (!ta) return;
+    if (!row.translated) {
+      ta.placeholder = 'Translating…';
+      ta.disabled = true;
+    } else if (row.error) {
+      ta.placeholder = 'Translation failed — type manually';
+      ta.disabled = false;
+    } else {
+      ta.placeholder = '';
+      ta.disabled = false;
+      if (!row.edited) ta.value = row.result;
+    }
+
+    let btn = row.tdRes?.querySelector('[data-translate-retry]');
+    if (row.error) {
+      if (!btn) {
+        btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-sm btn-outline-secondary';
+        btn.dataset.translateRetry = index;
+        btn.setAttribute('aria-label', `Retry ${row.target} translation`);
+        row.tdRes.appendChild(btn);
+      }
+      btn.textContent = row.retrying ? 'Retrying…' : 'Retry';
+      btn.disabled = Boolean(row.retrying);
+    } else if (btn) {
+      btn.remove();
+    }
+  }
+
+  async retryTranslateRow(index) {
+    const row = this.pendingTranslations?.[index];
+    if (!row || !row.error || row.retrying) return;
+    row.retrying = true;
+    this.updateTranslateRow(index, row);
+    try {
+      const results = await this.translateManager.translateMany(
+        [row.srcText],
+        row.source.toLowerCase(),
+        row.target.toLowerCase(),
+        { concurrency: 1, signal: this._translateAbort?.signal },
+      );
+      if (results[0]?.ok) {
+        row.result = this.translateManager.applyGlossary(results[0].text);
+        row.error = false;
+        row.edited = false;
+      }
+    } catch (e) {
+      row.error = true;
+    } finally {
+      row.translated = true;
+      row.retrying = false;
+      this.updateTranslateRow(index, row);
+    }
+  }
+
+  async applyTranslations() {
+    if (!this.pendingTranslations) return;
+    // A batch may still be running — wait for it so no line is silently dropped.
+    if (this._translateRun) {
+      try {
+        await this._translateRun;
+      } catch (e) {
+        console.info('Translation cancelled:', e);
+      }
+      if (!this.pendingTranslations) return;
+    }
     const lang = this.store.getActiveLang();
     for (const row of this.pendingTranslations) {
+      if (!row.translated) continue; // still running — nothing to apply yet
       const value = row.el ? row.el.value : row.result;
+      // A line that failed and was left empty keeps its previous translation.
+      if (row.error && !value.trim()) continue;
       if (!row.layer.texts) row.layer.texts = {};
       row.layer.texts[row.target] = value;
       if (lang === row.target) {
@@ -1507,9 +1648,13 @@ export class UI {
   }
 
   closeTranslateModal() {
+    this._translateAbort?.abort();
+    this._translateAbort = null;
+    this._translateRun = null;
     this.modalTranslate.classList.remove('active');
     this.pendingTranslations = null;
     this.translateTableBody.innerHTML = '';
+    if (this.btnApplyTranslate) this.btnApplyTranslate.disabled = false;
     const back = this._returnFocus;
     this._returnFocus = null;
     if (back && typeof back.focus === 'function' && document.contains(back)) back.focus();
