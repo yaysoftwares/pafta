@@ -190,6 +190,112 @@ describe('translate modal (UI)', () => {
     expect(document.querySelector('#modalTranslate [data-translate-retry="0"]')).toBeNull();
   });
 
+  it('keeps a manual edit when a later target finishes and applies the edited value', async () => {
+    ctx.store.project.langs = ['EN', 'TR', 'DE'];
+    const layer = { texts: { EN: 'Hello world', TR: 'eski çeviri' }, text: 'Hello world', set: vi.fn() };
+    ctx.canvasManager.getTextObjects = () => [layer];
+
+    let releaseDe;
+    ctx.translateManager.translateMany = vi.fn(async (texts, source, target) => {
+      if (target === 'de') {
+        return new Promise((resolve) => {
+          releaseDe = resolve;
+        });
+      }
+      return texts.map(() => ({ ok: true, text: 'Merhaba' }));
+    });
+
+    const running = ctx.ui.onTranslate();
+    await waitFor(() => ctx.ui.pendingTranslations?.[0]?.translated === true);
+
+    const textarea = document.querySelectorAll('#modalTranslate textarea')[0];
+    textarea.value = 'Elle yazıldı';
+    textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+    releaseDe([{ ok: true, text: 'Hallo' }]);
+    await running;
+
+    expect(document.querySelectorAll('#modalTranslate textarea')[0].value).toBe('Elle yazıldı');
+
+    ctx.ui.applyTranslations();
+    expect(layer.texts.TR).toBe('Elle yazıldı');
+  });
+
+  it('keeps the existing translation of a line that failed and was left empty', async () => {
+    const layer = { texts: { EN: 'Hello world', TR: 'Mevcut çeviri' }, text: 'Hello world', set: vi.fn() };
+    ctx.canvasManager.getTextObjects = () => [layer];
+    ctx.translateManager.translateMany = vi.fn(async (texts) =>
+      texts.map(() => ({ ok: false, error: 'HTTP 500' })),
+    );
+
+    await ctx.ui.onTranslate();
+    ctx.ui.applyTranslations();
+
+    expect(layer.texts.TR).toBe('Mevcut çeviri');
+  });
+
+  it('requests a retry with lowercase language codes', async () => {
+    const calls = [];
+    ctx.translateManager.translateMany = vi.fn(async (texts, source, target) => {
+      calls.push({ source, target });
+      return texts.map(() => ({ ok: false, error: 'HTTP 500' }));
+    });
+
+    await ctx.ui.onTranslate();
+    calls.length = 0;
+    document.querySelector('#modalTranslate [data-translate-retry="0"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(calls).toEqual([{ source: 'en', target: 'tr' }]);
+  });
+
+  it('aborts an in-flight retry when the modal is closed', async () => {
+    ctx.translateManager.translateMany = vi.fn(async (texts) =>
+      texts.map(() => ({ ok: false, error: 'HTTP 500' })),
+    );
+    await ctx.ui.onTranslate();
+
+    let options = null;
+    let release;
+    ctx.translateManager.translateMany = vi.fn((texts, source, target, opts) => {
+      options = opts;
+      return new Promise((resolve) => {
+        release = resolve;
+      });
+    });
+    document.querySelector('#modalTranslate [data-translate-retry="0"]').click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(options?.signal).toBeDefined();
+    ctx.ui.closeTranslateModal();
+    expect(options.signal.aborted).toBe(true);
+
+    release([{ ok: true, text: 'Merhaba' }]);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
+  it('waits for a running batch when Apply is pressed instead of dropping pending lines', async () => {
+    const layer = { texts: { EN: 'Hello world' }, text: 'Hello world', set: vi.fn() };
+    ctx.canvasManager.getTextObjects = () => [layer];
+    let release;
+    ctx.translateManager.translateMany = vi.fn(
+      () => new Promise((resolve) => {
+        release = resolve;
+      }),
+    );
+
+    const running = ctx.ui.onTranslate();
+    expect(ctx.ui.btnApplyTranslate.disabled).toBe(true);
+
+    const applying = ctx.ui.applyTranslations();
+    release([{ ok: true, text: 'Merhaba' }]);
+    await running;
+    await applying;
+
+    expect(layer.texts.TR).toBe('Merhaba');
+    expect(ctx.ui.btnApplyTranslate.disabled).toBe(false);
+  });
+
   it('aborts in-flight translation on close and applies no late results', async () => {
     let release;
     ctx.translateManager.translateMany = vi.fn(
